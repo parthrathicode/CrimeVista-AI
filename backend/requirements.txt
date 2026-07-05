@@ -3,7 +3,7 @@ uvicorn==0.34.0
 sqlalchemy==2.0.37
 scikit-learn==1.6.1
 xgboost==2.1.4
-shap==0.46.0
+shap>=0.46.0
 networkx==3.4.2
 python-louvain==0.16
 pandas==2.2.3

@@ -2,10 +2,10 @@ import os
 import sys
 import pickle
 import numpy as np
-import pandas as pd
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from functools import lru_cache
 
 # Add parent directory to path so we can import backend.models
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -33,6 +33,40 @@ def get_session():
     engine = create_engine(ENGINE_URL)
     Session = sessionmaker(bind=engine)
     return Session()
+
+# Cache model loading to avoid unpickling on every single prediction call
+_MODEL_DATA_CACHE = None
+
+def load_model_once():
+    global _MODEL_DATA_CACHE
+    if _MODEL_DATA_CACHE is None:
+        if os.path.exists(MODEL_PATH):
+            try:
+                with open(MODEL_PATH, "rb") as f:
+                    _MODEL_DATA_CACHE = pickle.load(f)
+            except Exception:
+                _MODEL_DATA_CACHE = {}
+        else:
+            _MODEL_DATA_CACHE = {}
+    return _MODEL_DATA_CACHE
+
+# Cache repeat offenders count per district
+@lru_cache(maxsize=128)
+def get_district_repeat_offender_count(district_id):
+    session = get_session()
+    try:
+        accused_in_district = session.query(Accused).join(CaseMaster).filter(
+            CaseMaster.district_id == district_id
+        ).all()
+        
+        offender_counts = {}
+        for acc in accused_in_district:
+            key = (acc.AccusedName.strip().lower(), acc.AgeYear, acc.GenderID)
+            offender_counts[key] = offender_counts.get(key, 0) + 1
+            
+        return float(len([k for k, count in offender_counts.items() if count >= 2]))
+    finally:
+        session.close()
 
 def get_features_for_combo(session, district_id, sub_head_id, reference_date):
     """
@@ -89,17 +123,7 @@ def get_features_for_combo(session, district_id, sub_head_id, reference_date):
     hotspot_density = sum(h["densityScore"] for h in hotspots) if hotspots else 0.0
     
     # 5. Repeat Offender Count in this district
-    # Group accused by name/age/gender in the district
-    accused_in_district = session.query(Accused).join(CaseMaster).filter(
-        CaseMaster.district_id == district_id
-    ).all()
-    
-    offender_counts = {}
-    for acc in accused_in_district:
-        key = (acc.AccusedName.strip().lower(), acc.AgeYear, acc.GenderID)
-        offender_counts[key] = offender_counts.get(key, 0) + 1
-        
-    repeat_offender_count = len([k for k, count in offender_counts.items() if count >= 2])
+    repeat_offender_count = get_district_repeat_offender_count(district_id)
     
     return [
         prior_3mo_avg,
@@ -107,9 +131,10 @@ def get_features_for_combo(session, district_id, sub_head_id, reference_date):
         trend_ratio,
         seasonal_index,
         hotspot_density,
-        float(repeat_offender_count)
+        repeat_offender_count
     ]
 
+@lru_cache(maxsize=1024)
 def predict_risk(district_id, sub_head_id):
     """
     Returns risk score, risk band, and SHAP explainability values for the district + crime subtype.
@@ -121,7 +146,7 @@ def predict_risk(district_id, sub_head_id):
     if not district or not subhead:
         session.close()
         return {"error": "Invalid district_id or sub_head_id"}
-        
+    
     # Extract values from ORM objects BEFORE closing the session to avoid DetachedInstanceError
     district_name = district.DistrictName
     category_name = subhead.crime_head.CrimeGroupName
@@ -131,12 +156,11 @@ def predict_risk(district_id, sub_head_id):
     session.close()
     
     # Check if XGBoost model is trained and saved
-    if not os.path.exists(MODEL_PATH):
+    model_data = load_model_once()
+    if not model_data:
         # Fallback explanation if model is not trained yet (to prevent crashes)
-        # We will compute a simple heuristic score and heuristic SHAP
         score = min(max((features[0] * 12.0 + features[2] * 20.0 + features[4] * 5.0), 5.0), 95.0)
         
-        # Risk Band
         if score < 30:
             band = "Low"
         elif score < 65:
@@ -164,12 +188,9 @@ def predict_risk(district_id, sub_head_id):
             "monthlyTrend": get_monthly_trend(district_id, sub_head_id, score)
         }
         
-    # Load model and explainer
-    with open(MODEL_PATH, "rb") as f:
-        saved_data = pickle.load(f)
-        model = saved_data["model"]
-        explainer = saved_data["explainer"]
-        
+    model = model_data["model"]
+    explainer = model_data["explainer"]
+    
     X_val = np.array([features])
     
     # Compute prediction and scale to 0-100 range
@@ -191,7 +212,7 @@ def predict_risk(district_id, sub_head_id):
     for f_name, s_val in zip(FEATURE_NAMES, shap_vals):
         contributions.append({
             "feature": f_name,
-            "points": round(float(s_val) * 10.0, 2) # Scaled to contribution points
+            "points": round(float(s_val) * 10.0, 2)
         })
         
     return {

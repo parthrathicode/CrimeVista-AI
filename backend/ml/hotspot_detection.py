@@ -5,6 +5,7 @@ from sklearn.cluster import DBSCAN
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
+from functools import lru_cache
 
 # Add parent directory to path so we can import backend.models
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -19,7 +20,9 @@ def get_session():
     Session = sessionmaker(bind=engine)
     return Session()
 
+@lru_cache(maxsize=128)
 def detect_hotspots(district_id, date_days=None, hour_range=None):
+
     session = get_session()
     
     # Query cases for the district

@@ -3,7 +3,7 @@ import sys
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from datetime import datetime, timedelta
 from typing import Optional, List
 
@@ -212,7 +212,7 @@ def get_anomaly_cases():
 def get_districts_insights():
     db = Session()
     districts = db.query(District).all()
-    cases_all = db.query(CaseMaster).all()
+    cases_all = db.query(CaseMaster).options(joinedload(CaseMaster.major_head), joinedload(CaseMaster.minor_head)).all()
     subheads = {sh.CrimeSubHeadID: sh.CrimeHeadName for sh in db.query(CrimeSubHead).all()}
     db.close()
     
