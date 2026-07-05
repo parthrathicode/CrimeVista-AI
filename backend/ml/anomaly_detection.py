@@ -17,7 +17,7 @@ ENGINE_URL = f"sqlite:///{DB_PATH}"
 def get_session():
     engine = create_engine(ENGINE_URL)
     Session = sessionmaker(bind=engine)
-    return session()
+    return Session()
 
 def detect_anomalies(limit=15):
     """

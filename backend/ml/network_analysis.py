@@ -16,7 +16,7 @@ ENGINE_URL = f"sqlite:///{DB_PATH}"
 def get_session():
     engine = create_engine(ENGINE_URL)
     Session = sessionmaker(bind=engine)
-    return session()
+    return Session()
 
 def get_identity_key(name, age, gender):
     """
@@ -152,14 +152,22 @@ def get_network_graph(filters=None):
     min_links = int(filters.get("minLinks", 2)) if filters else 2
     active_offenders = {}
     
+    # Retrieve all offenders to map identity keys to consistent 'ro_X' IDs
+    ro_list = get_repeat_offenders(min_cases=1)
+    key_to_ro_id = {}
+    for ro in ro_list:
+        g_id = 1 if ro["gender"] == "M" else 2
+        ro_key = get_identity_key(ro["name"], ro["age"], g_id)
+        key_to_ro_id[ro_key] = ro["id"]
+        
     for key, instances in offender_groups.items():
         if len(instances) >= min_links:
-            # Map instances to this offender key
             name = instances[0].AccusedName
             age = key[1]
             gender = "M" if key[2] == 1 else "F"
+            ro_id = key_to_ro_id.get(key, "ro_unknown")
             active_offenders[key] = {
-                "id": f"off_{name.lower().replace(' ', '_')}_{age}_{gender.lower()}",
+                "id": f"off-{ro_id}",
                 "label": name,
                 "age": age,
                 "gender": gender,

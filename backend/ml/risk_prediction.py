@@ -32,7 +32,7 @@ FEATURE_NAMES = [
 def get_session():
     engine = create_engine(ENGINE_URL)
     Session = sessionmaker(bind=engine)
-    return session()
+    return Session()
 
 def get_features_for_combo(session, district_id, sub_head_id, reference_date):
     """
