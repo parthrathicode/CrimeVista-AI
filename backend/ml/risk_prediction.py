@@ -122,6 +122,11 @@ def predict_risk(district_id, sub_head_id):
         session.close()
         return {"error": "Invalid district_id or sub_head_id"}
         
+    # Extract values from ORM objects BEFORE closing the session to avoid DetachedInstanceError
+    district_name = district.DistrictName
+    category_name = subhead.crime_head.CrimeGroupName
+    sub_type_name = subhead.CrimeHeadName
+    
     features = get_features_for_combo(session, district_id, sub_head_id, datetime.now())
     session.close()
     
@@ -150,9 +155,9 @@ def predict_risk(district_id, sub_head_id):
         
         return {
             "districtId": str(district_id),
-            "districtName": district.DistrictName,
-            "category": subhead.crime_head.CrimeGroupName,
-            "subType": subhead.CrimeHeadName,
+            "districtName": district_name,
+            "category": category_name,
+            "subType": sub_type_name,
             "score": round(score, 1),
             "band": band,
             "contributions": contributions,
@@ -191,9 +196,9 @@ def predict_risk(district_id, sub_head_id):
         
     return {
         "districtId": str(district_id),
-        "districtName": district.DistrictName,
-        "category": subhead.crime_head.CrimeGroupName,
-        "subType": subhead.CrimeHeadName,
+        "districtName": district_name,
+        "category": category_name,
+        "subType": sub_type_name,
         "score": round(score, 1),
         "band": band,
         "contributions": contributions,

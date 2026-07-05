@@ -91,8 +91,9 @@ python backend/ml/train_risk_model.py
 Start the FastAPI server on port 8000:
 ```bash
 # From root directory
-backend\venv\Scripts\activate
-uvicorn backend.main:app --reload
+cd backend
+venv\Scripts\activate
+python -m uvicorn main:app --reload
 ```
 API endpoints will be live at `http://127.0.0.1:8000`. Swagger documentation is available at `http://127.0.0.1:8000/docs`.
 

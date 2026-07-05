@@ -121,6 +121,16 @@ def get_cases_for_district(
 
 @app.get("/api/districts/{id}/hotspots")
 def get_district_hotspots(id: str, date_days: Optional[int] = None):
+    if id == "all":
+        # Return hotspots for all districts combined
+        db = Session()
+        districts = db.query(District).all()
+        db.close()
+        all_hotspots = []
+        for d in districts:
+            all_hotspots.extend(detect_hotspots(d.DistrictID, date_days=date_days))
+        all_hotspots.sort(key=lambda x: x["caseCount"], reverse=True)
+        return all_hotspots
     if not id.isdigit():
         raise HTTPException(status_code=400, detail="Invalid district ID")
     return detect_hotspots(int(id), date_days=date_days)
