@@ -40,6 +40,9 @@ graph TD
 2. **Network Analysis (NetworkX + Louvain community detection):** Resolves repeat offender co-occurrences, maps communities of crime cells, and computes betweenness centrality for key figures.
 3. **Risk Forecasting (XGBoost Regressor + SHAP explainer):** Forecasts next-30-day crime counts per district and crime category. Shows explanation contributions for each prediction via SHAP explainability.
 4. **Outlier/Anomaly Detection (Isolation Forest):** Evaluates case properties to identify statistically anomalous incidents for investigator review.
+5. **Automated Official PDF Generation (ReportLab):** Dynamically generates authentic, datathon-ready Karnataka State Police analytics reports with official footers and digital signature verification mockups.
+6. **Raw Data Export (CSV):** Dedicated API endpoints (`/api/districts/{id}/export-csv`) to stream filtered intelligence records directly to investigators.
+7. **Serverless Deployment (Zoho Catalyst):** Full CI/CD and deployment configuration setup for Zoho Catalyst AppSail (Backend) and Web Client Hosting (Frontend).
 
 ---
 
