@@ -39,8 +39,12 @@ export default function NetworkGraphClient({ graph, onNodeClick }: Props) {
   };
 
   return (
-    <div ref={containerRef} className="w-full h-full">
-      {Comp && (
+    <div ref={containerRef} className="w-full h-full relative">
+      {data.nodes.length === 0 ? (
+        <div className="absolute inset-0 flex items-center justify-center text-sm font-medium text-muted-foreground/60">
+          No matching network nodes found. Please try a different search or adjust your filters.
+        </div>
+      ) : Comp && (
         <Comp
           graphData={data}
           width={size.w}

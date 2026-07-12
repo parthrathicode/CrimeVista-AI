@@ -162,7 +162,7 @@ def get_offender_detail_api(id: str):
     # Retrieve offender details from the list of repeat offenders
     ro_list = get_repeat_offenders(min_cases=2)
     for ro in ro_list:
-        if ro["id"] == id or ro["id"].split("_")[-1] == id or ro["name"].lower().replace(" ", "_") in id.lower():
+        if ro["id"] == id or ro["id"].split("_")[-1] == id or id.lower() in ro["name"].lower():
             # Enrich MO signature further
             return ro
     raise HTTPException(status_code=404, detail="Offender not found")
@@ -379,7 +379,7 @@ def get_weekly_briefing(district_id: Optional[str] = None):
     }
 
 from fastapi.responses import StreamingResponse
-from reports import generate_district_report
+from reports import generate_district_report, generate_offender_report
 
 @app.get("/api/reports/generate")
 def generate_pdf_report(
@@ -404,6 +404,20 @@ def generate_pdf_report(
     
     headers = {
         "Content-Disposition": f"attachment; filename=CrimeVista_{report_type.replace(' ', '_')}.pdf"
+    }
+    
+    return StreamingResponse(pdf_buffer, media_type="application/pdf", headers=headers)
+
+@app.get("/api/reports/offender/{id}")
+def generate_pdf_offender_report(id: str):
+    # Fetch offender details
+    offender_data = get_offender_detail_api(id)
+    
+    # Generate the PDF buffer
+    pdf_buffer = generate_offender_report(offender_data)
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename=Subject_Profile_{id}.pdf"
     }
     
     return StreamingResponse(pdf_buffer, media_type="application/pdf", headers=headers)

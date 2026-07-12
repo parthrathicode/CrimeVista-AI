@@ -265,5 +265,120 @@ def generate_district_report(district_id: str, report_type: str, date_range: str
 
     # Build PDF with the custom header/footer
     doc.build(elements, onFirstPage=draw_header_footer_first_page, onLaterPages=draw_header_footer_later_pages)
+
+def generate_offender_report(offender_data: dict) -> io.BytesIO:
+    """
+    Generate an official Suspect/Offender Profile Dossier.
+    """
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter,
+        rightMargin=0.5*inch, leftMargin=0.5*inch,
+        topMargin=1.7*inch, bottomMargin=0.5*inch
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    title_style = ParagraphStyle(
+        'CustomTitle', parent=styles['Heading1'], fontName='Helvetica-Bold',
+        fontSize=12, alignment=1, textColor=colors.black,
+        spaceAfter=15, textTransform='uppercase'
+    )
+    
+    normal_style = ParagraphStyle(
+        'CustomNormal', parent=styles['Normal'], fontName='Helvetica',
+        fontSize=10, textColor=colors.black, spaceAfter=8
+    )
+    
+    table_header_style = ParagraphStyle('TH', parent=styles['Normal'], fontName='Helvetica-Bold', fontSize=9, textColor=colors.white)
+    table_cell_style = ParagraphStyle('TC', parent=styles['Normal'], fontName='Helvetica', fontSize=8, textColor=colors.black)
+    
+    elements = []
+    
+    # Title
+    elements.append(Paragraph(f"SUBJECT PROFILE: {offender_data.get('name', 'UNKNOWN').upper()}", title_style))
+    elements.append(HRFlowable(width="100%", thickness=1, color=colors.black, spaceBefore=0, spaceAfter=15))
+    
+    # Metadata Table
+    meta_data = [
+        [
+            Paragraph("<b>Subject Name:</b>", normal_style), Paragraph(offender_data.get('name', 'N/A'), normal_style),
+            Paragraph("<b>Age/Gender:</b>", normal_style), Paragraph(f"{offender_data.get('age', 'N/A')} / {offender_data.get('gender', 'N/A')}", normal_style)
+        ],
+        [
+            Paragraph("<b>Linked Cases:</b>", normal_style), Paragraph(str(len(offender_data.get('linkedCaseIds', []))), normal_style),
+            Paragraph("<b>Stations Involved:</b>", normal_style), Paragraph(str(offender_data.get('stationsInvolved', 0)), normal_style)
+        ],
+        [
+            Paragraph("<b>MO Signature:</b>", normal_style), Paragraph(offender_data.get('moSignature', 'N/A'), normal_style),
+            Paragraph("<b>Districts:</b>", normal_style), Paragraph(", ".join(offender_data.get('districtIds', [])), normal_style)
+        ]
+    ]
+    
+    meta_table = Table(meta_data, colWidths=[1.2*inch, 2.5*inch, 1.2*inch, 2.5*inch])
+    meta_table.setStyle(TableStyle([
+        ('BOX', (0, 0), (-1, -1), 0.5, colors.black),
+        ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.lightgrey),
+        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+        ('PADDING', (0, 0), (-1, -1), 6)
+    ]))
+    elements.append(meta_table)
+    elements.append(Spacer(1, 20))
+    
+    # Linked Cases List
+    elements.append(Paragraph("<b>CONFIRMED LINKED CASES (FIRs)</b>", normal_style))
+    
+    cases = offender_data.get('linkedCases', [])
+    case_data = [[
+        Paragraph("FIR No", table_header_style),
+        Paragraph("Date", table_header_style),
+        Paragraph("Crime Category", table_header_style),
+        Paragraph("Sub Type", table_header_style),
+        Paragraph("Status", table_header_style)
+    ]]
+    
+    for c in cases:
+        case_data.append([
+            Paragraph(str(c.get('crimeNo', '')), table_cell_style),
+            Paragraph(str(c.get('date', '')).split('T')[0], table_cell_style),
+            Paragraph(str(c.get('category', '')), table_cell_style),
+            Paragraph(str(c.get('subType', '')), table_cell_style),
+            Paragraph(str(c.get('status', '')), table_cell_style)
+        ])
+        
+    case_table = Table(case_data, colWidths=[1.0*inch, 1.0*inch, 2.0*inch, 2.0*inch, 1.4*inch])
+    case_table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.black),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
+        ('TOPPADDING', (0, 0), (-1, 0), 8),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    elements.append(case_table)
+    elements.append(Spacer(1, 20))
+    
+    # Signature Footer (Reusing the style)
+    signature_style = ParagraphStyle(
+        'Signature', parent=styles['Normal'], fontName='Helvetica-Bold',
+        fontSize=10, textColor=colors.black, alignment=2 # Right align
+    )
+    
+    footer_elements = []
+    footer_elements.append(Spacer(1, 30))
+    footer_elements.append(Paragraph("Digitally Signed", signature_style))
+    footer_elements.append(Paragraph("Analytics Division", signature_style))
+    footer_elements.append(Paragraph("Karnataka State Police", signature_style))
+    footer_elements.append(Spacer(1, 10))
+    
+    elements.append(KeepTogether(footer_elements))
+    
+    doc.build(elements, onFirstPage=draw_header_footer_first_page, onLaterPages=draw_header_footer_later_pages)
+    
     buffer.seek(0)
     return buffer
+

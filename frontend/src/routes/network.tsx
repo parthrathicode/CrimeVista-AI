@@ -43,6 +43,7 @@ function NetworkPage() {
   const [category, setCategory] = useState<string>("all");
   const [minLinks, setMinLinks] = useState<string>("2");
   const [selectedNode, setSelectedNode] = useState<string | null>(null);
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   const { data: districts = [] } = useQuery({ queryKey: ["districts"], queryFn: getDistricts });
   const { data: graph, isLoading } = useQuery({
@@ -66,15 +67,45 @@ function NetworkPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Filter bar */}
-      <div className="shrink-0 flex items-center gap-4 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-md shadow-sm">
+      <div className="shrink-0 flex items-center gap-4 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-md shadow-sm relative z-50">
         <div className="relative w-64">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-amber/70" />
           <Input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setShowAutocomplete(true);
+            }}
+            onFocus={() => setShowAutocomplete(true)}
+            onBlur={() => setTimeout(() => setShowAutocomplete(false), 200)}
             placeholder="Search offender by name…"
             className="h-9 pl-9 text-xs rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 focus-visible:ring-accent-amber/30 transition-colors shadow-sm"
           />
+          {showAutocomplete && graph && (
+            <div className="absolute top-full left-0 mt-1 w-full bg-surface/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 max-h-64 overflow-y-auto">
+              {graph.nodes.filter((n: any) => n.type === "accused").length === 0 ? (
+                <div className="p-3 text-xs text-muted-foreground text-center">No offenders found</div>
+              ) : (
+                <ul className="py-1">
+                  {graph.nodes
+                    .filter((n: any) => n.type === "accused")
+                    .map((n: any) => (
+                      <li
+                        key={n.id}
+                        className="px-3 py-2 text-xs hover:bg-white/5 cursor-pointer text-foreground flex justify-between items-center"
+                        onClick={() => {
+                          setQuery(n.label);
+                          setShowAutocomplete(false);
+                        }}
+                      >
+                        <span className="font-medium">{n.label}</span>
+                        <span className="text-[10px] text-muted-foreground bg-black/40 px-1.5 py-0.5 rounded">{n.linkedCaseCount} cases</span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+            </div>
+          )}
         </div>
         <Select value={category} onValueChange={setCategory}>
           <SelectTrigger className="h-9 w-52 text-xs rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 hover:bg-white/[0.02] transition-colors shadow-sm">

@@ -1,8 +1,18 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { getNetworkGraph } from "@/services/api";
 import { useSelectedDistrict } from "@/lib/selected-district";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const Route = createFileRoute("/reports")({
@@ -14,36 +24,65 @@ export const Route = createFileRoute("/reports")({
 });
 
 const REPORT_TYPES = [
-  "Monthly Crime Summary",
-  "Hotspot Analysis",
-  "Network Intelligence",
-  "Predictive Risk Forecast",
+  { id: "Monthly Crime Summary", desc: "A comprehensive overview of crime trends, volume, and clearance statistics for the selected period." },
+  { id: "Hotspot Analysis", desc: "Geographic concentration of incidents, highlighting priority zones and exact micro-hotspots requiring immediate deployment." },
+  { id: "Network Intelligence", desc: "Detailed breakdown of criminal syndicates, repeat offenders, and inter-district links to aid in dismantling organized networks." },
+  { id: "Predictive Risk Forecast", desc: "AI-driven forecast of potential incident spikes, vulnerable times of day, and high-risk sub-types for preemptive action." },
+  { id: "Suspect/Offender Profile", desc: "An official subject profile dossier including Age, Gender, MO signature, active districts, and all linked FIRs." },
 ];
 
 function ReportsPage() {
   const { districtId } = useSelectedDistrict();
-  const [selectedType, setSelectedType] = useState(REPORT_TYPES[0]);
+  const [selectedType, setSelectedType] = useState(REPORT_TYPES[0].id);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [offenderQuery, setOffenderQuery] = useState("");
+  const [showAutocomplete, setShowAutocomplete] = useState(false);
+
+  const { data: graph } = useQuery({
+    queryKey: ["network", offenderQuery, districtId, "all", "2"],
+    queryFn: () =>
+      getNetworkGraph({
+        query: offenderQuery,
+        districtId: districtId ?? undefined,
+        category: undefined,
+        minLinks: 2,
+      }),
+    enabled: selectedType === "Suspect/Offender Profile",
+  });
 
   const handleDownload = async () => {
+    if (selectedType === "Suspect/Offender Profile" && !offenderQuery) {
+      alert("Please enter a suspect name.");
+      return;
+    }
+    
     setIsDownloading(true);
     try {
-      const params = new URLSearchParams({ report_type: selectedType });
-      if (districtId) {
-        params.append("district_id", districtId);
+      let url = "";
+      if (selectedType === "Suspect/Offender Profile") {
+        url = `http://127.0.0.1:8000/api/reports/offender/${encodeURIComponent(offenderQuery)}`;
+      } else {
+        const params = new URLSearchParams({ report_type: selectedType });
+        if (districtId) {
+          params.append("district_id", districtId);
+        }
+        url = `http://127.0.0.1:8000/api/reports/generate?${params.toString()}`;
       }
       
-      const response = await fetch(`http://127.0.0.1:8000/api/reports/generate?${params.toString()}`);
-      if (!response.ok) throw new Error("Failed to generate report");
+      const response = await fetch(url);
+      if (!response.ok) {
+        if (response.status === 404) throw new Error("Offender not found.");
+        throw new Error("Failed to generate report");
+      }
       
       const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
+      const blobUrl = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
-      a.href = url;
+      a.href = blobUrl;
       a.download = `KSP_Analytics_${selectedType.replace(/ /g, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(blobUrl);
       document.body.removeChild(a);
     } catch (err) {
       console.error(err);
@@ -81,22 +120,77 @@ function ReportsPage() {
             <div className="space-y-4">
               <div className="space-y-3">
                 <label className="text-sm font-semibold text-foreground/90">Select Report Type</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {REPORT_TYPES.map(type => (
-                    <div
-                      key={type}
-                      onClick={() => setSelectedType(type)}
-                      className={`p-5 rounded-2xl border text-sm cursor-pointer transition-all flex items-center gap-4 shadow-inner ${
-                        selectedType === type
-                          ? "bg-accent-amber/10 border-accent-amber/50 shadow-[inset_0_0_15px_rgba(245,158,11,0.1)] text-accent-amber"
-                          : "bg-black/40 border-white/5 hover:border-accent-amber/40 hover:bg-white/5 hover:-translate-y-1 text-foreground/80 hover:shadow-[0_8px_20px_rgba(0,0,0,0.2)]"
-                      }`}
-                    >
-                      <FileText className={`w-5 h-5 ${selectedType === type ? "text-accent-amber drop-shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "text-muted-foreground"}`} />
-                      <span className="font-medium">{type}</span>
-                    </div>
-                  ))}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 items-start">
+                  <div>
+                    <Select value={selectedType} onValueChange={setSelectedType}>
+                      <SelectTrigger className="h-11 bg-black/40 border-white/10 text-foreground rounded-xl shadow-sm hover:border-accent-amber/50 transition-colors">
+                        <div className="flex items-center gap-2">
+                          <FileText className="w-4 h-4 text-accent-amber" />
+                          <SelectValue />
+                        </div>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {REPORT_TYPES.map(type => (
+                          <SelectItem key={type.id} value={type.id}>
+                            {type.id}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  
+                  <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] text-sm text-muted-foreground leading-relaxed shadow-inner">
+                    <span className="font-semibold text-accent-amber block mb-1">Overview</span>
+                    {REPORT_TYPES.find(t => t.id === selectedType)?.desc}
+                  </div>
                 </div>
+                
+                {selectedType === "Suspect/Offender Profile" && (
+                  <div className="pt-4 border-t border-white/5 mt-4">
+                    <label className="text-sm font-semibold text-foreground/90 block mb-2">Target Suspect Name</label>
+                    <div className="relative">
+                      <Input 
+                        placeholder="e.g. Janaki Srinivas" 
+                        value={offenderQuery}
+                        onChange={(e) => {
+                          setOffenderQuery(e.target.value);
+                          setShowAutocomplete(true);
+                        }}
+                        onFocus={() => setShowAutocomplete(true)}
+                        onBlur={() => setTimeout(() => setShowAutocomplete(false), 200)}
+                        className="bg-black/40 border-white/10 text-foreground"
+                      />
+                      {showAutocomplete && graph && (
+                        <div className="absolute top-full left-0 mt-1 w-full bg-surface/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 max-h-64 overflow-y-auto">
+                          {graph.nodes.filter((n: any) => n.type === "accused").length === 0 ? (
+                            <div className="p-3 text-xs text-muted-foreground text-center">No offenders found</div>
+                          ) : (
+                            <ul className="py-1">
+                              {graph.nodes
+                                .filter((n: any) => n.type === "accused")
+                                .map((n: any) => (
+                                  <li
+                                    key={n.id}
+                                    className="px-3 py-2 text-xs hover:bg-white/5 cursor-pointer text-foreground flex justify-between items-center"
+                                    onClick={() => {
+                                      setOffenderQuery(n.label);
+                                      setShowAutocomplete(false);
+                                    }}
+                                  >
+                                    <span className="font-medium">{n.label}</span>
+                                    <span className="text-[10px] text-muted-foreground bg-black/40 px-1.5 py-0.5 rounded">{n.linkedCaseCount} cases</span>
+                                  </li>
+                                ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-2">
+                      Enter the name of the repeat offender to generate a complete intelligence dossier.
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </section>
@@ -106,8 +200,10 @@ function ReportsPage() {
                 <div>
                   <h3 className="text-sm font-medium text-foreground mb-1">Generate {selectedType}</h3>
                   <p className="text-xs text-muted-foreground max-w-sm leading-relaxed">
-                    The report will be generated for <strong className="text-foreground">{districtId ? "the selected district" : "All Karnataka"}</strong>. 
-                    It includes key metrics, summaries, and executive recommendations.
+                    {selectedType === "Suspect/Offender Profile" ? 
+                      "The report will be generated as an official subject profile dossier including MO signature and linked cases." :
+                      <span>The report will be generated for <strong className="text-foreground">{districtId ? "the selected district" : "All Karnataka"}</strong>. It includes key metrics, summaries, and executive recommendations.</span>
+                    }
                   </p>
                 </div>
                 <Button 
