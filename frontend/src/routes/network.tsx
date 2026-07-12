@@ -24,7 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Search } from "lucide-react";
+import { Search, Network } from "lucide-react";
 import { CRIME_CATEGORIES, CATEGORY_COLORS, STATUS_COLORS } from "@/data/crimes";
 
 const NetworkGraphClient = lazy(() => import("@/components/network/NetworkGraphClient"));
@@ -66,18 +66,18 @@ function NetworkPage() {
   return (
     <div className="h-full flex flex-col">
       {/* Filter bar */}
-      <div className="shrink-0 flex items-center gap-3 px-4 py-2.5 border-b border-border bg-surface/50">
+      <div className="shrink-0 flex items-center gap-4 px-4 py-3 border-b border-border bg-surface/80 backdrop-blur-md shadow-sm">
         <div className="relative w-64">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-accent-amber/70" />
           <Input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Search offender by name…"
-            className="h-8 pl-7 text-xs bg-background"
+            className="h-9 pl-9 text-xs rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 focus-visible:ring-accent-amber/30 transition-colors shadow-sm"
           />
         </div>
         <Select value={category} onValueChange={setCategory}>
-          <SelectTrigger className="h-8 w-52 text-xs bg-background">
+          <SelectTrigger className="h-9 w-52 text-xs rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 hover:bg-white/[0.02] transition-colors shadow-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -89,12 +89,13 @@ function NetworkPage() {
             ))}
           </SelectContent>
         </Select>
-        <div className="flex items-center gap-2">
-          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-mono">
+        <div className="flex items-center gap-3 bg-surface/30 px-3 py-1 rounded-xl border border-border/50">
+          <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+            <Network className="w-3 h-3 text-accent-amber/70" />
             Min links
           </span>
           <Select value={minLinks} onValueChange={setMinLinks}>
-            <SelectTrigger className="h-8 w-16 text-xs bg-background">
+            <SelectTrigger className="h-7 w-16 text-xs rounded-lg bg-black/20 border-white/5 hover:border-accent-amber/50 transition-colors">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -106,19 +107,19 @@ function NetworkPage() {
             </SelectContent>
           </Select>
         </div>
-        <div className="ml-auto flex items-center gap-2 text-xs font-mono text-muted-foreground">
-          <span className="text-accent-amber font-semibold tabular-nums">
+        <div className="ml-auto flex items-center gap-2 text-xs text-muted-foreground bg-black/20 px-4 py-1.5 rounded-xl border border-white/5 shadow-inner">
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 font-bold tabular-nums text-sm drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
             {graph?.stats.offenderCount ?? 0}
           </span>
-          repeat offenders across
-          <span className="text-accent-amber font-semibold tabular-nums">
+          <span className="font-medium">repeat offenders across</span>
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 font-bold tabular-nums text-sm drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
             {graph?.stats.linkedCaseCount ?? 0}
           </span>
-          linked cases
+          <span className="font-medium">linked cases</span>
           {districtId && (
             <Badge
               variant="outline"
-              className="text-[10px] border-accent-amber/40 text-accent-amber"
+              className="text-[10px] border-accent-amber/40 text-accent-amber ml-2 bg-accent-amber/10"
             >
               {districts.find((d) => d.id === districtId)?.name}
             </Badge>
@@ -139,7 +140,7 @@ function NetworkPage() {
         </ClientOnly>
 
         {/* Legend */}
-        <div className="absolute top-3 right-3 bg-surface/90 backdrop-blur border border-border rounded-sm p-3 text-[11px] space-y-1.5 z-10">
+        <div className="absolute top-3 right-3 bg-surface/90 backdrop-blur border border-border rounded-xl p-3 text-[11px] space-y-1.5 z-10">
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">
             Legend
           </div>
@@ -156,9 +157,9 @@ function NetworkPage() {
       </div>
 
       <Sheet open={!!selectedNode} onOpenChange={(o) => !o && setSelectedNode(null)}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] bg-surface border-l border-border overflow-y-auto">
+        <SheetContent className="w-[480px] sm:max-w-[480px] bg-surface/90 backdrop-blur-2xl border-l border-white/5 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-foreground">
+            <SheetTitle className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
               {detail ? detail.name : (selectedNode ?? "Node")}
             </SheetTitle>
           </SheetHeader>
@@ -170,24 +171,32 @@ function NetworkPage() {
                 <Stat label="Stations" value={detail.stationsInvolved} />
                 <Stat label="Linked Cases" value={detail.linkedCases.length} highlight />
                 <Stat
-                  label="District"
-                  value={districts.find((d) => d.id === detail.districtId)?.name ?? "—"}
+                  label={detail.districtIds && detail.districtIds.length > 1 ? "Districts" : "District"}
+                  value={
+                    detail.districtIds && detail.districtIds.length > 0
+                      ? detail.districtIds
+                          .map((id: string) => districts.find((d) => d.id === id)?.name)
+                          .filter(Boolean)
+                          .join(", ")
+                      : districts.find((d) => d.id === detail.districtId)?.name ?? "—"
+                  }
                   span={2}
                 />
               </div>
 
-              <div className="p-3 rounded-sm border border-accent-amber/30 bg-accent-amber/5">
-                <div className="text-[10px] uppercase tracking-wider text-accent-amber/80 mb-1">
+              <div className="p-4 rounded-2xl border border-accent-amber/30 bg-accent-amber/10 shadow-[0_0_20px_rgba(245,158,11,0.1)]">
+                <div className="text-[10px] uppercase tracking-wider text-accent-amber/90 font-semibold mb-1.5 flex items-center gap-1.5">
+                  <Network className="w-3 h-3" />
                   MO Signature
                 </div>
-                <div className="text-sm font-mono text-accent-amber">{detail.moSignature}</div>
+                <div className="text-sm font-mono text-accent-amber drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] leading-relaxed">{detail.moSignature}</div>
               </div>
 
               <div>
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-3 pl-1">
                   Linked Cases
                 </div>
-                <div className="rounded-sm border border-border overflow-hidden">
+                <div className="rounded-2xl border border-white/5 bg-black/20 p-2 overflow-hidden shadow-inner">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -199,22 +208,22 @@ function NetworkPage() {
                     </TableHeader>
                     <TableBody>
                       {detail.linkedCases.map((c) => (
-                        <TableRow key={c.id}>
-                          <TableCell className="font-mono text-[11px] py-1.5">{c.id}</TableCell>
-                          <TableCell className="text-[11px] py-1.5">
+                        <TableRow key={c.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                          <TableCell className="font-mono text-[11px] py-2">{c.id}</TableCell>
+                          <TableCell className="text-[11px] py-2">
                             <span className="inline-flex items-center gap-1.5">
                               <span
-                                className="w-1.5 h-1.5 rounded-full"
+                                className="w-1.5 h-1.5 rounded-full shadow-sm"
                                 style={{ background: CATEGORY_COLORS[c.category] }}
                               />
-                              {c.subType}
+                              <span className="font-medium text-white/80">{c.subType}</span>
                             </span>
                           </TableCell>
-                          <TableCell className="text-[11px] py-1.5 font-mono text-muted-foreground">
+                          <TableCell className="text-[11px] py-2 font-mono text-muted-foreground">
                             {new Date(c.date).toISOString().slice(0, 10)}
                           </TableCell>
-                          <TableCell className="text-[11px] py-1.5">
-                            <span className="font-mono" style={{ color: STATUS_COLORS[c.status] }}>
+                          <TableCell className="text-[11px] py-2">
+                            <span className="font-mono font-semibold" style={{ color: STATUS_COLORS[c.status] }}>
                               {c.status}
                             </span>
                           </TableCell>
@@ -252,11 +261,15 @@ function Stat({
 }) {
   return (
     <div
-      className={`rounded-sm border border-border bg-background/50 p-2 ${span === 2 ? "col-span-2" : ""}`}
+      className={`rounded-2xl border border-white/5 bg-black/20 p-3 shadow-inner ${span === 2 ? "col-span-2" : ""}`}
     >
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
       <div
-        className={`text-sm mt-0.5 tabular-nums ${highlight ? "text-accent-amber font-semibold" : "text-foreground"}`}
+        className={`mt-1 tabular-nums tracking-tight ${
+          highlight
+            ? "text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]"
+            : "text-lg font-medium text-foreground"
+        }`}
       >
         {value}
       </div>

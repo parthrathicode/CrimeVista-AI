@@ -97,21 +97,21 @@ function RiskPage() {
             Top 5 Highest Risk (State-wide)
           </h2>
         </div>
-        <div className="grid grid-cols-5 gap-3">
+        <div className="grid grid-cols-5 gap-4">
           {leaderboard.map((r, i) => (
             <button
               key={`${r.districtId}-${r.category}`}
               onClick={() => setSelectedKey(riskRowKey(r))}
-              className="text-left rounded-sm border border-border bg-surface p-3 hover:border-accent-amber/50 transition-colors"
+              className="text-left rounded-2xl border border-white/5 bg-black/20 p-4 hover:bg-white/5 hover:border-accent-amber/40 hover:-translate-y-1 hover:shadow-[0_8px_24px_rgba(0,0,0,0.2)] transition-all shadow-inner group"
             >
               <div className="flex items-center justify-between mb-2">
                 <span className="text-[10px] font-mono text-muted-foreground">#{i + 1}</span>
                 <Badge className={`${BAND_STYLES[r.band]} font-mono text-[10px]`}>{r.band}</Badge>
               </div>
-              <div className="text-3xl font-semibold tabular-nums text-accent-amber leading-none">
+              <div className="text-3xl font-bold tabular-nums notranslate text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)] leading-none">
                 {r.score}
               </div>
-              <div className="mt-2 text-xs text-foreground/90 leading-tight">{r.districtName}</div>
+              <div className="mt-3 text-xs text-foreground font-medium leading-tight">{r.districtName}</div>
               <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                 <span
                   className="w-1.5 h-1.5 rounded-full"
@@ -142,7 +142,7 @@ function RiskPage() {
               </div>
             ) : (
               <Table>
-                <TableHeader className="sticky top-0 bg-surface z-10">
+                <TableHeader className="sticky top-0 bg-surface/80 backdrop-blur-md z-10 border-b border-white/5">
                   <TableRow>
                     <SortHead
                       label="District"
@@ -177,7 +177,7 @@ function RiskPage() {
                         key={rowKey}
                         onClick={() => setSelectedKey(rowKey)}
                         data-state={active ? "selected" : undefined}
-                        className={`cursor-pointer ${active ? "bg-accent-amber/10" : "hover:bg-white/5"}`}
+                        className={`cursor-pointer transition-colors ${active ? "bg-accent-amber/10 shadow-[inset_4px_0_0_rgba(245,158,11,1)]" : "hover:bg-white/5"}`}
                       >
                         <TableCell className="text-xs py-2">{r.districtName}</TableCell>
                         <TableCell className="text-xs py-2">
@@ -193,13 +193,13 @@ function RiskPage() {
                           {r.subType}
                         </TableCell>
                         <TableCell className="text-right py-2">
-                          <div className="flex items-center gap-2 justify-end">
-                            <div className="w-20 h-1 rounded-full bg-border overflow-hidden">
+                          <div className="flex items-center gap-3 justify-end">
+                            <div className="w-24 h-1.5 rounded-full bg-black/40 overflow-hidden shadow-inner">
                               <div
-                                className="h-full"
+                                className="h-full rounded-full shadow-[0_0_8px_currentcolor]"
                                 style={{
                                   width: `${r.score}%`,
-                                  background:
+                                  backgroundColor:
                                     r.band === "High"
                                       ? "#EF4444"
                                       : r.band === "Medium"
@@ -208,7 +208,7 @@ function RiskPage() {
                                 }}
                               />
                             </div>
-                            <span className="tabular-nums font-mono text-xs w-8 text-right">
+                            <span className="tabular-nums notranslate font-mono text-xs font-semibold w-8 text-right">
                               {r.score}
                             </span>
                           </div>
@@ -231,10 +231,16 @@ function RiskPage() {
         </div>
 
         {/* Detail panel */}
-        <aside className="w-[440px] shrink-0 border-l border-border bg-surface overflow-y-auto">
+        <aside className="w-[440px] shrink-0 border-l border-white/5 bg-surface/90 backdrop-blur-xl overflow-y-auto shadow-[-8px_0_24px_rgba(0,0,0,0.3)] z-10">
           {!selectedScore ? (
-            <div className="p-8 text-center text-xs text-muted-foreground">
-              Select a row to inspect the risk breakdown.
+            <div className="h-full flex flex-col items-center justify-center p-8 text-center text-muted-foreground">
+              <div className="w-16 h-16 rounded-full bg-black/20 border border-white/5 flex items-center justify-center mb-5 shadow-inner">
+                <TrendingUp className="w-6 h-6 text-accent-amber/40" />
+              </div>
+              <div className="text-sm font-semibold text-foreground/80 mb-2">No Selection</div>
+              <div className="text-xs max-w-[220px] leading-relaxed">
+                Select a row from the risk matrix to inspect its detailed breakdown and historical trends.
+              </div>
             </div>
           ) : (
             <RiskDetail score={selectedScore} />
@@ -302,7 +308,7 @@ function RiskDetail({ score }: { score: RiskScore }) {
         </div>
         <div className="mt-4 flex items-end gap-3">
           <div
-            className="text-6xl font-semibold tabular-nums leading-none"
+            className="text-6xl font-semibold tabular-nums notranslate leading-none"
             style={{ color: bandColor }}
           >
             {score.score}
@@ -328,7 +334,7 @@ function RiskDetail({ score }: { score: RiskScore }) {
               layout="vertical"
               margin={{ left: 0, right: 40, top: 0, bottom: 0 }}
             >
-              <XAxis type="number" hide domain={[0, "dataMax + 4"]} />
+              <XAxis type="number" hide domain={[(dataMin: number) => Math.min(0, dataMin - 1), (dataMax: number) => Math.max(0, dataMax + 1)]} />
               <YAxis
                 type="category"
                 dataKey="feature"
@@ -344,7 +350,7 @@ function RiskDetail({ score }: { score: RiskScore }) {
                   borderRadius: 4,
                   fontSize: 11,
                 }}
-                formatter={(v: number) => [`+${v} pts`, "Contribution"]}
+                formatter={(v: number) => [`${v > 0 ? "+" : ""}${v} pts`, "Contribution"]}
               />
               <Bar
                 dataKey="points"
@@ -354,7 +360,7 @@ function RiskDetail({ score }: { score: RiskScore }) {
                   fill: "#F59E0B",
                   fontSize: 11,
                   fontFamily: "JetBrains Mono",
-                  formatter: (v: number) => `+${v}`,
+                  formatter: (v: number) => `${v > 0 ? "+" : ""}${v}`,
                 }}
               >
                 {score.contributions.map((c) => (

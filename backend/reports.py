@@ -1,0 +1,269 @@
+import io
+import datetime
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, HRFlowable, KeepTogether
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib import colors
+from reportlab.lib.units import inch
+
+# Colors based on CrimeVista AI theme
+# Colors based on formal police report theme
+BG_COLOR = colors.white
+SURFACE_COLOR = colors.white
+TEXT_PRIMARY = colors.black
+TEXT_MUTED = colors.HexColor('#333333')
+
+def draw_header_footer_first_page(canvas, doc):
+    canvas.saveState()
+    
+    # KSP Logo (if provided by user)
+    import os
+    logo_path = os.path.join(os.path.dirname(__file__), 'ksp_logo.png')
+    
+    center_x = letter[0] / 2.0
+    # The y-coordinate is the bottom of the image.
+    # Image height is 0.7 inch. We want top of image at letter[1] - 0.2 inch.
+    # So bottom of image is letter[1] - 0.9 inch.
+    image_y = letter[1] - 0.9*inch
+    
+    if os.path.exists(logo_path):
+        try:
+            # Draw logo centered at the top
+            canvas.drawImage(logo_path, center_x - 0.35*inch, image_y, width=0.7*inch, height=0.7*inch, preserveAspectRatio=True, mask='auto')
+        except Exception:
+            pass
+            
+    # Formal Centered Header Text (starts below the image)
+    text_y = letter[1] - 1.1*inch
+    
+    canvas.setFillColor(colors.black)
+    canvas.setFont('Helvetica-Bold', 14)
+    canvas.drawCentredString(center_x, text_y, "Karnataka State Police")
+    
+    canvas.setFont('Helvetica', 12)
+    canvas.drawCentredString(center_x, text_y - 0.2*inch, "Form No. 76A (Analytics)")
+    
+    canvas.setFont('Helvetica-Bold', 14)
+    canvas.drawCentredString(center_x, text_y - 0.45*inch, "INTELLIGENCE & ANALYTICS REPORT")
+    
+    # Footer
+    canvas.setFillColor(colors.black)
+    canvas.setFont('Helvetica', 9)
+    
+    note_text = "Note: This is an auto-generated analytics document for Karnataka State Police"
+    canvas.drawString(0.5*inch, 0.5*inch, note_text)
+    
+    page_text = f"Page {doc.page}"
+    canvas.drawRightString(letter[0] - 0.5*inch, 0.5*inch, page_text)
+    
+    canvas.restoreState()
+
+def draw_header_footer_later_pages(canvas, doc):
+    canvas.saveState()
+    
+    center_x = letter[0] / 2.0
+    
+    # Footer only (no large header on continuation pages)
+    canvas.setFillColor(colors.black)
+    canvas.setFont('Helvetica', 9)
+    
+    note_text = "Note: This is an auto-generated analytics document for Karnataka State Police"
+    canvas.drawString(0.5*inch, 0.5*inch, note_text)
+    
+    page_text = f"Page {doc.page}"
+    canvas.drawRightString(letter[0] - 0.5*inch, 0.5*inch, page_text)
+    
+    canvas.restoreState()
+
+def generate_district_report(district_id: str, report_type: str, date_range: str, data: dict) -> io.BytesIO:
+    """
+    Generate a highly-styled PDF report using ReportLab.
+    """
+    buffer = io.BytesIO()
+    
+    # Create document with tighter margins to fit on 1 page
+    doc = SimpleDocTemplate(
+        buffer, pagesize=letter,
+        rightMargin=0.5*inch, leftMargin=0.5*inch,
+        topMargin=1.7*inch, bottomMargin=0.5*inch
+    )
+    
+    styles = getSampleStyleSheet()
+    
+    # Custom styles
+    title_style = ParagraphStyle(
+        'CustomTitle',
+        parent=styles['Heading1'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        alignment=1, # Center alignment
+        textColor=colors.black,
+        spaceAfter=15
+    )
+    
+    subtitle_style = ParagraphStyle(
+        'Subtitle',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=11,
+        textColor=colors.black,
+        spaceAfter=4
+    )
+    
+    heading_style = ParagraphStyle(
+        'CustomHeading',
+        parent=styles['Heading2'],
+        fontName='Helvetica-Bold',
+        fontSize=12,
+        textColor=colors.black,
+        spaceAfter=5,
+        spaceBefore=10
+    )
+    
+    bullet_style = ParagraphStyle(
+        'CustomBullet',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=11,
+        leftIndent=20,
+        spaceAfter=8,
+        textColor=colors.black
+    )
+    
+    signature_style = ParagraphStyle(
+        'Signature',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=11,
+        alignment=2, # Right alignment
+        textColor=colors.black,
+        spaceAfter=2
+    )
+    
+    small_heading_style = ParagraphStyle(
+        'SmallHeading',
+        parent=styles['Normal'],
+        fontName='Helvetica-Bold',
+        fontSize=10,
+        textColor=colors.black,
+        spaceBefore=15,
+        spaceAfter=5
+    )
+    
+    small_text_style = ParagraphStyle(
+        'SmallText',
+        parent=styles['Normal'],
+        fontName='Helvetica',
+        fontSize=10,
+        textColor=colors.black,
+        spaceAfter=3,
+        leftIndent=10
+    )
+
+    elements = []
+
+    # Report Title
+    elements.append(Paragraph(f"In respect of {report_type}", title_style))
+    
+    # Metadata Block as a formal table
+    generated_on = datetime.datetime.now().strftime("%d/%m/%Y")
+    
+    meta_data = [
+        ["District Scope:", data.get('districtName', 'All Karnataka')],
+        ["Date Range:", date_range],
+        ["Generated On:", generated_on]
+    ]
+    
+    meta_table = Table(meta_data, colWidths=[150, 390])
+    meta_table.setStyle(TableStyle([
+        ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+        ('FONTNAME', (1, 0), (1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ('TOPPADDING', (0, 0), (-1, -1), 4),
+        ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+        ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    ]))
+    
+    elements.append(meta_table)
+    elements.append(Spacer(1, 10))
+
+    # Summary Table
+    if 'totalCases' in data:
+        elements.append(Paragraph("EXECUTIVE SUMMARY", heading_style))
+        
+        trend = data.get('trendPct', 0)
+        trend_str = f"+{trend}%" if trend > 0 else f"{trend}%"
+        
+        table_data = [
+            ["Key Metric", "Value", "Notes"],
+            ["Total Cases", str(data.get('totalCases', 0)), f"{trend_str} vs prior 30-day period"],
+        ]
+        
+        if 'hotspotCount' in data:
+            table_data.append(["Hotspot Count", str(data.get('hotspotCount', 0)), "Active geospatial clusters detected"])
+        if 'offenderCount' in data:
+            table_data.append(["Repeat Offenders", str(data.get('offenderCount', 0)), "High-risk offender profiles linked"])
+            
+        t = Table(table_data, colWidths=[150, 100, 250])
+        t.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#f0f0f0')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, 0), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+            ('TOPPADDING', (0, 0), (-1, 0), 4),
+            # Row styling
+            ('BACKGROUND', (0, 1), (-1, -1), colors.white),
+            ('TEXTCOLOR', (0, 1), (-1, -1), colors.black),
+            ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+            ('FONTSIZE', (0, 1), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
+            ('TOPPADDING', (0, 1), (-1, -1), 4),
+            ('GRID', (0, 0), (-1, -1), 1, colors.black),
+        ]))
+        elements.append(t)
+        elements.append(Spacer(1, 10))
+
+    # Recommendations
+    if 'recommendations' in data and data['recommendations']:
+        elements.append(Paragraph("ACTIONABLE INTELLIGENCE & RECOMMENDATIONS", heading_style))
+        
+        for rec in data['recommendations']:
+            # Using a custom bullet point for a cleaner look
+            bullet_text = f"• {rec}"
+            elements.append(Paragraph(bullet_text, bullet_style))
+            
+    footer_elements = []
+    
+    footer_elements.append(Spacer(1, 15))
+    
+    # Signature Block (Plain text to match original Police Report and save space)
+    footer_elements.append(Paragraph("Digitally Signed", signature_style))
+    footer_elements.append(Paragraph("Analytics Division", signature_style))
+    footer_elements.append(Paragraph("Karnataka State Police", signature_style))
+    
+    footer_elements.append(Spacer(1, 10))
+    
+    # Note Section
+    footer_elements.append(Paragraph("Note:", small_heading_style))
+    footer_elements.append(Paragraph("(i) This is an auto-generated analytics document.", small_text_style))
+    footer_elements.append(Paragraph("(ii) For verification visit the Analytics module on the official portal.", small_text_style))
+    footer_elements.append(Paragraph("(iii) Authority utilizing this report must verify against physical records.", small_text_style))
+    
+    # Disclaimer Section
+    footer_elements.append(Paragraph("Disclaimer:", small_heading_style))
+    footer_elements.append(Paragraph("(i) This application is for predictive analysis and intelligence reporting only.", small_text_style))
+    footer_elements.append(Paragraph("(ii) Report generated under this system is not a subject matter for legal enquiry.", small_text_style))
+    footer_elements.append(Paragraph("(iii) In case of emergency or active crime, contact the nearest Police Station.", small_text_style))
+    footer_elements.append(Paragraph("(iv) Unauthorized distribution of this intelligence report is prohibited.", small_text_style))
+
+    # Wrap in KeepTogether to prevent page breaks in the middle of the signature/notes
+    elements.append(KeepTogether(footer_elements))
+
+    # Build PDF with the custom header/footer
+    doc.build(elements, onFirstPage=draw_header_footer_first_page, onLaterPages=draw_header_footer_later_pages)
+    buffer.seek(0)
+    return buffer

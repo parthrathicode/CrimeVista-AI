@@ -12,7 +12,7 @@ import type {
   RiskScore,
 } from "@/types";
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = import.meta.env.VITE_API_URL || "http://127.0.0.1:8000/api";
 
 export interface MapFilters {
   hourRange?: [number, number];
@@ -91,27 +91,44 @@ export async function getNetworkGraph(filters: NetworkFilters = {}): Promise<Net
   let filteredNodes: NetworkNode[] = data.nodes;
   let filteredEdges: NetworkEdge[] = data.edges;
   
-  if (filters.query) {
-    const q = filters.query.toLowerCase().trim();
-    filteredNodes = filteredNodes.filter(
-      (n) => n.label.toLowerCase().includes(q) || n.type !== "accused"
-    );
-  }
-  
-  if (filters.category) {
+  if (filters.query || filters.category) {
+    const q = filters.query ? filters.query.toLowerCase().trim() : null;
     const cat = filters.category;
-    // Keep edges matching category
-    filteredEdges = filteredEdges.filter((e) => e.crimeCategory === cat);
-    // Recalculate connected nodes
+    
+    // Step 1: Filter edges by category
+    if (cat) {
+      filteredEdges = filteredEdges.filter((e) => e.crimeCategory === cat);
+    }
+    
+    // Step 2: If query, find matching accused nodes and filter edges again
+    let matchingAccused = new Set<string>();
+    if (q) {
+      data.nodes.forEach((n: NetworkNode) => {
+        if (n.type === "accused" && n.label.toLowerCase().includes(q)) {
+          matchingAccused.add(n.id);
+        }
+      });
+      filteredEdges = filteredEdges.filter((e) => matchingAccused.has(e.source) || matchingAccused.has(e.target));
+    }
+    
+    // Step 3: Determine which nodes to keep
     const activeNodeIds = new Set<string>();
     filteredEdges.forEach((e) => {
       activeNodeIds.add(e.source);
       activeNodeIds.add(e.target);
     });
-    // Filter nodes down to connected ones plus stations
-    filteredNodes = filteredNodes.filter(
-      (n) => activeNodeIds.has(n.id) || n.type === "station"
-    );
+    
+    // Make sure we keep the matched accused nodes even if they have no edges left
+    if (q) {
+      matchingAccused.forEach(id => activeNodeIds.add(id));
+    }
+    
+    filteredNodes = data.nodes.filter((n: NetworkNode) => {
+      if (activeNodeIds.has(n.id)) return true;
+      // If we only filtered by category, we preserve stations for context
+      if (!q && cat && n.type === "station") return true;
+      return false;
+    });
   }
   
   return {

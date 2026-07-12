@@ -79,6 +79,31 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
+    scripts: [
+      {
+        children: `
+          if (typeof Node === 'function' && Node.prototype) {
+            const originalRemoveChild = Node.prototype.removeChild;
+            Node.prototype.removeChild = function(child) {
+              if (child.parentNode !== this) {
+                if (console) console.error('React DOM crash prevented: removeChild mismatch (likely Google Translate).', child, this);
+                return child;
+              }
+              return originalRemoveChild.apply(this, arguments);
+            };
+            
+            const originalInsertBefore = Node.prototype.insertBefore;
+            Node.prototype.insertBefore = function(newNode, referenceNode) {
+              if (referenceNode && referenceNode.parentNode !== this) {
+                if (console) console.error('React DOM crash prevented: insertBefore mismatch (likely Google Translate).', referenceNode, this);
+                return newNode;
+              }
+              return originalInsertBefore.apply(this, arguments);
+            };
+          }
+        `,
+      }
+    ],
   }),
   shellComponent: RootShell,
   component: RootComponent,
@@ -91,6 +116,11 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <style dangerouslySetInnerHTML={{ __html: `
+          body { top: 0px !important; position: static !important; }
+          body > .skiptranslate, iframe.skiptranslate, .goog-te-banner-frame, .VIpgJd-Zvi9od-ORHb-OEVmcd, .VIpgJd-Zvi9od-aZ2wEe-wOHMyf, .goog-te-gadget-icon, #goog-gt-tt { display: none !important; }
+          .VIpgJd-Zvi9od-aZ2wEe-wOHMyf-ti6hGc, div[id^="goog-gt-"] { top: auto !important; bottom: 20px !important; left: 20px !important; right: auto !important; z-index: 999999 !important; }
+        ` }} />
       </head>
       <body>
         {children}

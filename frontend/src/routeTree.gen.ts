@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as RiskRouteImport } from './routes/risk'
+import { Route as ReportsRouteImport } from './routes/reports'
 import { Route as NetworkRouteImport } from './routes/network'
 import { Route as DistrictsRouteImport } from './routes/districts'
 import { Route as BriefingRouteImport } from './routes/briefing'
@@ -18,6 +19,11 @@ import { Route as IndexRouteImport } from './routes/index'
 const RiskRoute = RiskRouteImport.update({
   id: '/risk',
   path: '/risk',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReportsRoute = ReportsRouteImport.update({
+  id: '/reports',
+  path: '/reports',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NetworkRoute = NetworkRouteImport.update({
@@ -46,6 +52,7 @@ export interface FileRoutesByFullPath {
   '/briefing': typeof BriefingRoute
   '/districts': typeof DistrictsRoute
   '/network': typeof NetworkRoute
+  '/reports': typeof ReportsRoute
   '/risk': typeof RiskRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +60,7 @@ export interface FileRoutesByTo {
   '/briefing': typeof BriefingRoute
   '/districts': typeof DistrictsRoute
   '/network': typeof NetworkRoute
+  '/reports': typeof ReportsRoute
   '/risk': typeof RiskRoute
 }
 export interface FileRoutesById {
@@ -61,14 +69,23 @@ export interface FileRoutesById {
   '/briefing': typeof BriefingRoute
   '/districts': typeof DistrictsRoute
   '/network': typeof NetworkRoute
+  '/reports': typeof ReportsRoute
   '/risk': typeof RiskRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/briefing' | '/districts' | '/network' | '/risk'
+  fullPaths:
+    '/' | '/briefing' | '/districts' | '/network' | '/reports' | '/risk'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/briefing' | '/districts' | '/network' | '/risk'
-  id: '__root__' | '/' | '/briefing' | '/districts' | '/network' | '/risk'
+  to: '/' | '/briefing' | '/districts' | '/network' | '/reports' | '/risk'
+  id:
+    | '__root__'
+    | '/'
+    | '/briefing'
+    | '/districts'
+    | '/network'
+    | '/reports'
+    | '/risk'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -76,6 +93,7 @@ export interface RootRouteChildren {
   BriefingRoute: typeof BriefingRoute
   DistrictsRoute: typeof DistrictsRoute
   NetworkRoute: typeof NetworkRoute
+  ReportsRoute: typeof ReportsRoute
   RiskRoute: typeof RiskRoute
 }
 
@@ -86,6 +104,13 @@ declare module '@tanstack/react-router' {
       path: '/risk'
       fullPath: '/risk'
       preLoaderRoute: typeof RiskRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reports': {
+      id: '/reports'
+      path: '/reports'
+      fullPath: '/reports'
+      preLoaderRoute: typeof ReportsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/network': {
@@ -124,6 +149,7 @@ const rootRouteChildren: RootRouteChildren = {
   BriefingRoute: BriefingRoute,
   DistrictsRoute: DistrictsRoute,
   NetworkRoute: NetworkRoute,
+  ReportsRoute: ReportsRoute,
   RiskRoute: RiskRoute,
 }
 export const routeTree = rootRouteImport

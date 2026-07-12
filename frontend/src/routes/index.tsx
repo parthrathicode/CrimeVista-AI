@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, X, ArrowLeft } from "lucide-react";
+import { AlertTriangle, X, ArrowLeft, Calendar, MapPin } from "lucide-react";
 import {
   BarChart,
   Bar,
@@ -92,21 +92,29 @@ function CrimeMapPage() {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Alerts strip */}
       {visibleAlerts.length > 0 && (
-        <div className="shrink-0 flex items-center gap-2 px-4 py-2 border-b border-border bg-background/60 overflow-x-auto">
+        <div className="shrink-0 flex flex-col gap-2 p-2 relative z-10 bg-background/30 backdrop-blur-sm border-b border-border">
           {visibleAlerts.map((a) => (
             <div
               key={a.id}
-              className="shrink-0 flex items-center gap-2 pl-2 pr-1 py-1 rounded-sm bg-accent-amber/10 border border-accent-amber/30 text-xs"
+              className="relative flex items-center gap-2 px-3 py-1.5 mx-auto w-fit max-w-3xl rounded-full bg-[#1a140d]/90 border border-accent-amber/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
             >
-              <AlertTriangle className="w-3.5 h-3.5 text-accent-amber shrink-0" />
-              <span className="text-foreground/90">{a.title}</span>
+              {/* Inner ambient gradient */}
+              <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent-amber/10 via-transparent to-transparent pointer-events-none" />
+              
+              <div className="relative p-1 rounded-full bg-accent-amber/20 border border-accent-amber/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
+                <AlertTriangle className="w-3 h-3 text-accent-amber shrink-0 drop-shadow-[0_0_8px_rgba(245,158,11,1)]" />
+              </div>
+              
+              <span className="relative text-[11px] font-medium text-amber-50/90 tracking-wide pr-2">
+                {a.title}
+              </span>
+              
               <button
                 onClick={() => setDismissedAlerts((s) => new Set(s).add(a.id))}
-                className="ml-1 p-0.5 hover:bg-white/10 rounded"
+                className="relative p-1 hover:bg-accent-amber/20 text-accent-amber/60 hover:text-accent-amber rounded-full transition-colors ml-1"
               >
-                <X className="w-3 h-3 text-muted-foreground" />
+                <X className="w-3 h-3" />
               </button>
             </div>
           ))}
@@ -142,8 +150,11 @@ function CrimeMapPage() {
             Window
           </span>
           <Select value={dateWindow} onValueChange={setDateWindow}>
-            <SelectTrigger className="h-7 w-36 text-xs bg-background">
-              <SelectValue />
+            <SelectTrigger className="h-9 w-40 text-xs rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 hover:bg-white/[0.02] transition-colors shadow-sm">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-3.5 h-3.5 text-accent-amber/70" />
+                <SelectValue />
+              </div>
             </SelectTrigger>
             <SelectContent>
               {DATE_WINDOWS.map((w) => (
@@ -177,7 +188,7 @@ function CrimeMapPage() {
             {Object.entries(CATEGORY_COLORS).map(([k, v]) => (
               <div
                 key={k}
-                className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground bg-background/70 backdrop-blur px-2 py-0.5 rounded-sm"
+                className="flex items-center gap-2 text-[10px] font-mono text-muted-foreground bg-background/70 backdrop-blur px-2 py-0.5 rounded-xl"
               >
                 <span className="w-2 h-2 rounded-full" style={{ background: v }} />
                 {k}
@@ -186,26 +197,29 @@ function CrimeMapPage() {
           </div>
         </div>
 
-        <aside className="w-80 shrink-0 border-l border-border bg-surface overflow-y-auto">
-          <div className="p-4 border-b border-border">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-              {selectedDistrict ? "District" : "State"}
+        <aside className="w-80 shrink-0 border-l border-border/50 bg-surface/80 backdrop-blur-xl overflow-y-auto shadow-[-4px_0_24px_rgba(0,0,0,0.2)] z-10 flex flex-col gap-4 p-4">
+          <div className="bg-black/20 rounded-2xl p-4 border border-white/5 shadow-inner">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5">
+                <MapPin className="w-3 h-3 text-accent-amber/70" />
+                {selectedDistrict ? "District Focus" : "State Overview"}
+              </div>
             </div>
-            <div className="text-lg font-semibold mt-0.5">
+            <div className="text-xl font-bold mt-2 text-foreground tracking-tight">
               {selectedDistrict?.name ?? "Karnataka"}
             </div>
-            <div className="mt-3 flex items-baseline gap-2">
-              <span className="text-3xl font-semibold tabular-nums text-accent-amber">
+            <div className="mt-4 flex flex-col">
+              <span className="text-4xl font-bold tabular-nums notranslate text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
                 {stats.total}
               </span>
-              <span className="text-xs uppercase tracking-wider text-muted-foreground">
-                cases in view
+              <span className="text-[10px] uppercase tracking-widest text-muted-foreground mt-1 font-semibold">
+                Cases in view
               </span>
             </div>
           </div>
 
-          <div className="p-4 border-b border-border">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">
+          <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-4 font-semibold">
               Top Crime Types
             </div>
             <div className="h-32">
@@ -220,19 +234,22 @@ function CrimeMapPage() {
                     type="category"
                     dataKey="name"
                     width={140}
-                    tick={{ fill: "#94a3b8", fontSize: 10 }}
+                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
+                    cursor={{ fill: "rgba(255,255,255,0.05)" }}
                     contentStyle={{
-                      background: "#1a1f26",
-                      border: "1px solid #2a3038",
-                      borderRadius: 4,
+                      background: "rgba(15, 19, 26, 0.9)",
+                      backdropFilter: "blur(8px)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "12px",
                       fontSize: 11,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
                     }}
                   />
-                  <Bar dataKey="value" radius={[0, 2, 2, 0]}>
+                  <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
                     {stats.topCats.map((c) => (
                       <Cell
                         key={c.name}
@@ -245,8 +262,8 @@ function CrimeMapPage() {
             </div>
           </div>
 
-          <div className="p-4">
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-3">
+          <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-4 font-semibold">
               Case Status
             </div>
             <div className="h-40">
@@ -256,9 +273,12 @@ function CrimeMapPage() {
                     data={stats.statusData}
                     dataKey="value"
                     nameKey="name"
-                    innerRadius={40}
+                    innerRadius={45}
                     outerRadius={65}
-                    paddingAngle={2}
+                    paddingAngle={4}
+                    stroke="#0b0f14"
+                    strokeWidth={2}
+                    cornerRadius={4}
                   >
                     {stats.statusData.map((d) => (
                       <Cell
@@ -269,49 +289,54 @@ function CrimeMapPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      background: "#1a1f26",
-                      border: "1px solid #2a3038",
-                      borderRadius: 4,
+                      background: "rgba(15, 19, 26, 0.9)",
+                      backdropFilter: "blur(8px)",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      borderRadius: "12px",
                       fontSize: 11,
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
                     }}
                   />
                 </PieChart>
               </ResponsiveContainer>
             </div>
-            <div className="mt-2 space-y-1">
+            <div className="mt-4 space-y-2">
               {stats.statusData.map((s) => (
-                <div key={s.name} className="flex items-center justify-between text-xs">
+                <div key={s.name} className="flex items-center justify-between text-xs p-1.5 rounded-lg hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-2">
                     <span
-                      className="w-2 h-2 rounded-full"
+                      className="w-2.5 h-2.5 rounded-full shadow-sm"
                       style={{ background: STATUS_COLORS[s.name as keyof typeof STATUS_COLORS] }}
                     />
-                    <span className="text-muted-foreground">{s.name}</span>
+                    <span className="text-muted-foreground font-medium">{s.name}</span>
                   </div>
-                  <span className="tabular-nums text-foreground">{s.value}</span>
+                  <span className="tabular-nums notranslate text-foreground font-bold">{s.value}</span>
                 </div>
               ))}
             </div>
           </div>
 
-          {selectedDistrict && (
-            <div className="p-4 border-t border-border">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-2">
-                Hotspots
+          {selectedDistrict && hotspots.length > 0 && (
+            <div className="bg-black/20 rounded-2xl p-4 border border-white/5">
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground mb-4 font-semibold flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3 text-red-400" />
+                Active Hotspots
               </div>
-              {hotspots.map((h) => (
-                <div key={h.id} className="text-xs py-1.5 border-b border-border/50 last:border-0">
-                  <div className="flex items-center justify-between">
-                    <Badge className="bg-accent-amber/15 text-accent-amber border-accent-amber/30 text-[10px] font-mono">
-                      {h.caseCount} cases
-                    </Badge>
-                    <span className="text-muted-foreground font-mono text-[10px]">
-                      {h.lat.toFixed(3)}, {h.lng.toFixed(3)}
-                    </span>
+              <div className="space-y-2">
+                {hotspots.map((h) => (
+                  <div key={h.id} className="text-xs p-3 bg-surface/40 rounded-xl border border-border/40 hover:border-accent-amber/30 transition-colors">
+                    <div className="flex items-center justify-between mb-2">
+                      <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[10px] font-mono px-1.5 py-0">
+                        {h.caseCount} cases
+                      </Badge>
+                      <span className="text-muted-foreground font-mono text-[10px]">
+                        {h.lat.toFixed(3)}, {h.lng.toFixed(3)}
+                      </span>
+                    </div>
+                    <div className="text-foreground/90 font-medium">Dominant: {h.dominantCrime}</div>
                   </div>
-                  <div className="mt-1 text-foreground/90">Dominant: {h.dominantCrime}</div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           )}
         </aside>

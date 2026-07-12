@@ -374,3 +374,33 @@ def get_weekly_briefing(district_id: Optional[str] = None):
         "recommendations": recommendations,
         "plainText": "\n".join(plain_text_lines)
     }
+
+from fastapi.responses import StreamingResponse
+from reports import generate_district_report
+
+@app.get("/api/reports/generate")
+def generate_pdf_report(
+    district_id: Optional[str] = None,
+    report_type: str = "Monthly Crime Summary"
+):
+    # Fetch intelligence data for the report (reuse briefing logic)
+    briefing_data = get_weekly_briefing(district_id)
+    
+    # Generate the PDF buffer
+    pdf_buffer = generate_district_report(
+        district_id=district_id or "all",
+        report_type=report_type,
+        date_range=briefing_data["dateRange"],
+        data={
+            "districtName": briefing_data["scope"],
+            "totalCases": briefing_data["totalCases"],
+            "trendPct": briefing_data["trendPct"],
+            "recommendations": briefing_data["bullets"] + briefing_data["recommendations"]
+        }
+    )
+    
+    headers = {
+        "Content-Disposition": f"attachment; filename=CrimeVista_{report_type.replace(' ', '_')}.pdf"
+    }
+    
+    return StreamingResponse(pdf_buffer, media_type="application/pdf", headers=headers)

@@ -74,6 +74,7 @@ export interface RepeatOffender {
   age: number;
   gender: "M" | "F";
   districtId: string;
+  districtIds?: string[];
   linkedCaseIds: string[];
 }
 

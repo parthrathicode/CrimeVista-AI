@@ -45,7 +45,8 @@ def get_repeat_offenders(min_cases=2):
     # Cache subhead names
     subheads = {sh.CrimeSubHeadID: sh.CrimeHeadName for sh in session.query(CrimeSubHead).all()}
     
-    offender_id_counter = 1
+    import hashlib
+    
     for key, instances in offender_groups.items():
         linked_cases_count = len(instances)
         if linked_cases_count < min_cases:
@@ -98,18 +99,21 @@ def get_repeat_offenders(min_cases=2):
         top_bucket = max(hour_buckets, key=hour_buckets.get) if hour_buckets else "—"
         top_gravity = max(gravity_counts, key=gravity_counts.get) if gravity_counts else "—"
         
+        key_str = f"{name}_{age}_{gender}"
+        ro_hash = hashlib.md5(key_str.encode('utf-8')).hexdigest()[:8]
+        
         repeat_offenders.append({
-            "id": f"ro_{offender_id_counter}",
+            "id": f"ro_{ro_hash}",
             "name": instances[0].AccusedName, # Preserve casing
             "age": age,
             "gender": gender_str,
             "districtId": str(list(district_ids)[0]) if district_ids else "1",
+            "districtIds": [str(d) for d in district_ids],
             "linkedCaseIds": [str(cid) for cid in linked_case_ids],
             "linkedCases": cases_details,
             "moSignature": f"{top_cat} · {top_bucket} · {top_gravity}",
             "stationsInvolved": len(set(c["stationId"] for c in cases_details))
         })
-        offender_id_counter += 1
         
     # Sort by case count descending
     repeat_offenders.sort(key=lambda x: len(x["linkedCaseIds"]), reverse=True)

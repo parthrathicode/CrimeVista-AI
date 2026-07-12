@@ -161,3 +161,12 @@ body {
 ::-webkit-scrollbar-thumb:hover {
   background: oklch(0.4 0.015 250);
 }
+
+/* Hide Google Translate Banner and reset body margin */
+.goog-te-banner-frame.skiptranslate, 
+.goog-te-gadget-icon {
+  display: none !important;
+}
+body {
+  top: 0px !important;
+}

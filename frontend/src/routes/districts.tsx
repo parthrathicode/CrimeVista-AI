@@ -49,15 +49,15 @@ function DistrictCardsPage() {
           : insights.map((d) => {
               const up = d.trendPct >= 0;
               return (
-                <button
+              <button
                   key={d.districtId}
                   onClick={() => {
                     setDistrictId(d.districtId);
                     navigate({ to: "/" });
                   }}
-                  className="text-left rounded-sm border border-border bg-surface p-4 hover:border-accent-amber/50 hover:bg-white/[0.02] transition-colors group"
+                  className="text-left rounded-2xl border border-white/5 bg-black/20 p-5 hover:bg-white/5 hover:border-accent-amber/40 hover:-translate-y-1 hover:shadow-[0_10px_30px_rgba(0,0,0,0.3)] transition-all shadow-inner group flex flex-col h-full"
                 >
-                  <div className="flex items-start justify-between mb-3">
+                  <div className="flex items-start justify-between mb-4">
                     <div>
                       <div className="text-sm font-semibold">{d.districtName}</div>
                       <div className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground mt-0.5">
@@ -69,17 +69,17 @@ function DistrictCardsPage() {
                     </Badge>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <div className="rounded-sm bg-background/50 border border-border p-2">
-                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="rounded-xl bg-black/40 border border-white/5 p-3 shadow-inner">
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">
                         Cases
                       </div>
-                      <div className="flex items-baseline gap-1.5 mt-0.5">
-                        <span className="text-lg font-semibold tabular-nums text-accent-amber">
+                      <div className="flex items-baseline gap-1.5 mt-1">
+                        <span className="text-2xl font-bold tabular-nums notranslate text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
                           {d.totalCases}
                         </span>
                         <span
-                          className={`text-[10px] font-mono flex items-center gap-0.5 ${up ? "text-risk-high" : "text-risk-low"}`}
+                          className={`text-[10px] font-mono flex items-center gap-0.5 ${up ? "text-risk-high drop-shadow-[0_0_4px_rgba(239,68,68,0.5)]" : "text-risk-low drop-shadow-[0_0_4px_rgba(16,185,129,0.5)]"}`}
                         >
                           {up ? (
                             <ArrowUpRight className="w-3 h-3" />
@@ -90,30 +90,30 @@ function DistrictCardsPage() {
                         </span>
                       </div>
                     </div>
-                    <div className="rounded-sm bg-background/50 border border-border p-2">
-                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        <Zap className="w-3 h-3" />
+                    <div className="rounded-xl bg-black/40 border border-white/5 p-3 shadow-inner">
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-accent-amber/70" />
                         Hotspots
                       </div>
-                      <div className="text-lg font-semibold tabular-nums mt-0.5">
+                      <div className="text-xl font-bold tabular-nums notranslate mt-1 text-foreground">
                         {d.hotspotCount}
                       </div>
                     </div>
-                    <div className="rounded-sm bg-background/50 border border-border p-2">
-                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        <Users className="w-3 h-3" />
+                    <div className="rounded-xl bg-black/40 border border-white/5 p-3 shadow-inner">
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                        <Users className="w-3 h-3 text-accent-amber/70" />
                         Repeat Offenders
                       </div>
-                      <div className="text-lg font-semibold tabular-nums mt-0.5">
+                      <div className="text-xl font-bold tabular-nums notranslate mt-1 text-foreground">
                         {d.offenderCount}
                       </div>
                     </div>
-                    <div className="rounded-sm bg-background/50 border border-border p-2">
-                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                        <Target className="w-3 h-3" />
+                    <div className="rounded-xl bg-black/40 border border-white/5 p-3 shadow-inner">
+                      <div className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1">
+                        <Target className="w-3 h-3 text-accent-amber/70" />
                         Dominant
                       </div>
-                      <div className="text-xs mt-0.5 truncate flex items-center gap-1.5">
+                      <div className="text-xs font-medium mt-1.5 truncate flex items-center gap-1.5 text-foreground/90">
                         <span
                           className="w-1.5 h-1.5 rounded-full shrink-0"
                           style={{
@@ -127,18 +127,20 @@ function DistrictCardsPage() {
                     </div>
                   </div>
 
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground flex items-center gap-1 mb-1">
-                    <MapPin className="w-3 h-3" />
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold flex items-center gap-1.5 mb-1.5">
+                    <MapPin className="w-3 h-3 text-accent-amber/70" />
                     Predicted Hotspot
                   </div>
-                  <div className="text-xs text-foreground/90 mb-3">{d.topHotspotLabel}</div>
+                  <div className="text-xs text-foreground/90 font-medium mb-4">{d.topHotspotLabel}</div>
 
-                  <div className="pt-3 border-t border-border">
-                    <div className="text-[10px] uppercase tracking-wider text-accent-amber/80 mb-1">
-                      Suggested Action
-                    </div>
-                    <div className="text-xs text-foreground/85 leading-snug">
-                      {d.suggestedAction}
+                  <div className="mt-auto pt-4 w-full">
+                    <div className="p-3 rounded-xl bg-accent-amber/10 border border-accent-amber/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
+                      <div className="text-[9px] uppercase tracking-wider text-accent-amber/90 font-semibold mb-1">
+                        Suggested Action
+                      </div>
+                      <div className="text-[11px] text-accent-amber/80 leading-snug">
+                        {d.suggestedAction}
+                      </div>
                     </div>
                   </div>
                 </button>
