@@ -84,7 +84,9 @@ function NetworkPage() {
           {showAutocomplete && graph && (
             <div className="absolute top-full left-0 mt-1 w-full bg-surface/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-[0_10px_40px_rgba(0,0,0,0.5)] z-50 max-h-64 overflow-y-auto">
               {graph.nodes.filter((n: any) => n.type === "accused").length === 0 ? (
-                <div className="p-3 text-xs text-muted-foreground text-center">No offenders found</div>
+                <div className="p-3 text-xs text-muted-foreground text-center">
+                  No offenders found
+                </div>
               ) : (
                 <ul className="py-1">
                   {graph.nodes
@@ -99,7 +101,9 @@ function NetworkPage() {
                         }}
                       >
                         <span className="font-medium">{n.label}</span>
-                        <span className="text-[10px] text-muted-foreground bg-black/40 px-1.5 py-0.5 rounded">{n.linkedCaseCount} cases</span>
+                        <span className="text-[10px] text-muted-foreground bg-black/40 px-1.5 py-0.5 rounded">
+                          {n.linkedCaseCount} cases
+                        </span>
                       </li>
                     ))}
                 </ul>
@@ -202,14 +206,16 @@ function NetworkPage() {
                 <Stat label="Stations" value={detail.stationsInvolved} />
                 <Stat label="Linked Cases" value={detail.linkedCases.length} highlight />
                 <Stat
-                  label={detail.districtIds && detail.districtIds.length > 1 ? "Districts" : "District"}
+                  label={
+                    detail.districtIds && detail.districtIds.length > 1 ? "Districts" : "District"
+                  }
                   value={
                     detail.districtIds && detail.districtIds.length > 0
                       ? detail.districtIds
                           .map((id: string) => districts.find((d) => d.id === id)?.name)
                           .filter(Boolean)
                           .join(", ")
-                      : districts.find((d) => d.id === detail.districtId)?.name ?? "—"
+                      : (districts.find((d) => d.id === detail.districtId)?.name ?? "—")
                   }
                   span={2}
                 />
@@ -220,7 +226,9 @@ function NetworkPage() {
                   <Network className="w-3 h-3" />
                   MO Signature
                 </div>
-                <div className="text-sm font-mono text-accent-amber drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] leading-relaxed">{detail.moSignature}</div>
+                <div className="text-sm font-mono text-accent-amber drop-shadow-[0_0_4px_rgba(245,158,11,0.5)] leading-relaxed">
+                  {detail.moSignature}
+                </div>
               </div>
 
               <div>
@@ -238,14 +246,20 @@ function NetworkPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {detail.linkedCases.map((c) => (
-                        <TableRow key={c.id} className="border-white/5 hover:bg-white/5 transition-colors">
+                      {detail.linkedCases.map((c: any) => (
+                        <TableRow
+                          key={c.id}
+                          className="border-white/5 hover:bg-white/5 transition-colors"
+                        >
                           <TableCell className="font-mono text-[11px] py-2">{c.id}</TableCell>
                           <TableCell className="text-[11px] py-2">
                             <span className="inline-flex items-center gap-1.5">
                               <span
                                 className="w-1.5 h-1.5 rounded-full shadow-sm"
-                                style={{ background: CATEGORY_COLORS[c.category] }}
+                                style={{
+                                  background:
+                                    CATEGORY_COLORS[c.category as keyof typeof CATEGORY_COLORS],
+                                }}
                               />
                               <span className="font-medium text-white/80">{c.subType}</span>
                             </span>
@@ -254,7 +268,12 @@ function NetworkPage() {
                             {new Date(c.date).toISOString().slice(0, 10)}
                           </TableCell>
                           <TableCell className="text-[11px] py-2">
-                            <span className="font-mono font-semibold" style={{ color: STATUS_COLORS[c.status] }}>
+                            <span
+                              className="font-mono font-semibold"
+                              style={{
+                                color: STATUS_COLORS[c.status as keyof typeof STATUS_COLORS],
+                              }}
+                            >
                               {c.status}
                             </span>
                           </TableCell>
@@ -294,7 +313,9 @@ function Stat({
     <div
       className={`rounded-2xl border border-white/5 bg-black/20 p-3 shadow-inner ${span === 2 ? "col-span-2" : ""}`}
     >
-      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">{label}</div>
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
+        {label}
+      </div>
       <div
         className={`mt-1 tabular-nums tracking-tight ${
           highlight

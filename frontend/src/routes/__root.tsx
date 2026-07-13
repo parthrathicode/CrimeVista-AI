@@ -102,7 +102,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             };
           }
         `,
-      }
+      },
     ],
   }),
   shellComponent: RootShell,
@@ -116,11 +116,15 @@ function RootShell({ children }: { children: ReactNode }) {
     <html lang="en" className="dark">
       <head>
         <HeadContent />
-        <style dangerouslySetInnerHTML={{ __html: `
+        <style
+          dangerouslySetInnerHTML={{
+            __html: `
           body { top: 0px !important; position: static !important; }
           body > .skiptranslate, iframe.skiptranslate, .goog-te-banner-frame, .VIpgJd-Zvi9od-ORHb-OEVmcd, .VIpgJd-Zvi9od-aZ2wEe-wOHMyf, .goog-te-gadget-icon, #goog-gt-tt { display: none !important; }
           .VIpgJd-Zvi9od-aZ2wEe-wOHMyf-ti6hGc, div[id^="goog-gt-"] { top: auto !important; bottom: 20px !important; left: 20px !important; right: auto !important; z-index: 999999 !important; }
-        ` }} />
+        `,
+          }}
+        />
       </head>
       <body>
         {children}

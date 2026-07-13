@@ -1,6 +1,18 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState, type ReactNode } from "react";
-import { Map, Network, Activity, FileText, Sparkles, IdCard, BookOpen, PanelLeftClose, PanelLeftOpen, Globe, MapPin } from "lucide-react";
+import {
+  Map,
+  Network,
+  Activity,
+  FileText,
+  Sparkles,
+  IdCard,
+  BookOpen,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Globe,
+  MapPin,
+} from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDistricts } from "@/services/api";
 import { useSelectedDistrict } from "@/lib/selected-district";
@@ -34,8 +46,6 @@ const NAV = [
   { to: "/reports", label: "PDF Reports", icon: FileText },
 ];
 
-
-
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { districtId, setDistrictId } = useSelectedDistrict();
@@ -66,7 +76,10 @@ export function AppShell({ children }: { children: ReactNode }) {
   const handleLanguageChange = (newLang: string) => {
     if (newLang === "en") {
       document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" + window.location.hostname + "; path=/;";
+      document.cookie =
+        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" +
+        window.location.hostname +
+        "; path=/;";
     } else {
       document.cookie = `googtrans=/en/${newLang}; path=/`;
       document.cookie = `googtrans=/en/${newLang}; domain=${window.location.hostname}; path=/`;
@@ -76,17 +89,21 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (document.getElementById("google-translate-script")) return;
-    
+
     (window as any).googleTranslateElementInit = () => {
       new (window as any).google.translate.TranslateElement(
-        { pageLanguage: "en", layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE },
-        "google_translate_element"
+        {
+          pageLanguage: "en",
+          layout: (window as any).google.translate.TranslateElement.InlineLayout.SIMPLE,
+        },
+        "google_translate_element",
       );
     };
 
     const script = document.createElement("script");
     script.id = "google-translate-script";
-    script.src = "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
+    script.src =
+      "https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit";
     script.async = true;
     document.body.appendChild(script);
   }, []);
@@ -97,7 +114,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <aside
         className={cn(
           "shrink-0 border-r border-border bg-surface flex flex-col transition-all duration-300 relative",
-          isCollapsed ? "w-[68px]" : "w-56"
+          isCollapsed ? "w-[68px]" : "w-56",
         )}
       >
         <button
@@ -119,7 +136,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             {!isCollapsed && (
               <div className="leading-none shrink-0 whitespace-nowrap">
                 <div className="text-[15px] font-bold tracking-tight text-foreground">
-                  CrimeVista <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-200">AI</span>
+                  CrimeVista{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-200">
+                    AI
+                  </span>
                 </div>
               </div>
             )}
@@ -140,19 +160,20 @@ export function AppShell({ children }: { children: ReactNode }) {
                   active
                     ? "bg-accent-amber/10 text-accent-amber border-l-2 border-accent-amber pl-2"
                     : "text-muted-foreground hover:bg-white/5 hover:text-foreground border-l-2 border-transparent pl-2",
-                  isCollapsed ? "justify-center border-l-0 pl-2.5" : ""
+                  isCollapsed ? "justify-center border-l-0 pl-2.5" : "",
                 )}
               >
-                <Icon className={cn("w-4 h-4 shrink-0", isCollapsed && active ? "text-accent-amber" : "")} />
+                <Icon
+                  className={cn(
+                    "w-4 h-4 shrink-0",
+                    isCollapsed && active ? "text-accent-amber" : "",
+                  )}
+                />
                 {!isCollapsed && <span className="truncate">{item.label}</span>}
               </Link>
             );
           })}
         </nav>
-
-
-
-
       </aside>
 
       {/* Main */}
@@ -182,7 +203,9 @@ export function AppShell({ children }: { children: ReactNode }) {
               </SelectContent>
             </Select>
 
-            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider ml-2">District</span>
+            <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider ml-2">
+              District
+            </span>
             <Select
               value={districtId ?? "all"}
               onValueChange={(v) => setDistrictId(v === "all" ? null : v)}

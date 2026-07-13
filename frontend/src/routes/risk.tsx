@@ -111,7 +111,9 @@ function RiskPage() {
               <div className="text-3xl font-bold tabular-nums notranslate text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 drop-shadow-[0_0_8px_rgba(245,158,11,0.3)] leading-none">
                 {r.score}
               </div>
-              <div className="mt-3 text-xs text-foreground font-medium leading-tight">{r.districtName}</div>
+              <div className="mt-3 text-xs text-foreground font-medium leading-tight">
+                {r.districtName}
+              </div>
               <div className="text-[10px] text-muted-foreground mt-0.5 flex items-center gap-1">
                 <span
                   className="w-1.5 h-1.5 rounded-full"
@@ -239,7 +241,8 @@ function RiskPage() {
               </div>
               <div className="text-sm font-semibold text-foreground/80 mb-2">No Selection</div>
               <div className="text-xs max-w-[220px] leading-relaxed">
-                Select a row from the risk matrix to inspect its detailed breakdown and historical trends.
+                Select a row from the risk matrix to inspect its detailed breakdown and historical
+                trends.
               </div>
             </div>
           ) : (
@@ -334,7 +337,14 @@ function RiskDetail({ score }: { score: RiskScore }) {
               layout="vertical"
               margin={{ left: 0, right: 40, top: 0, bottom: 0 }}
             >
-              <XAxis type="number" hide domain={[(dataMin: number) => Math.min(0, dataMin - 1), (dataMax: number) => Math.max(0, dataMax + 1)]} />
+              <XAxis
+                type="number"
+                hide
+                domain={[
+                  (dataMin: number) => Math.min(0, dataMin - 1),
+                  (dataMax: number) => Math.max(0, dataMax + 1),
+                ]}
+              />
               <YAxis
                 type="category"
                 dataKey="feature"

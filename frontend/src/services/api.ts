@@ -42,7 +42,9 @@ export async function getCases(
   if (filters.dateWindowDays != null) {
     params.append("dateWindowDays", String(filters.dateWindowDays));
   }
-  const res = await fetch(`${API_BASE}/districts/${districtId ?? "all"}/cases?${params.toString()}`);
+  const res = await fetch(
+    `${API_BASE}/districts/${districtId ?? "all"}/cases?${params.toString()}`,
+  );
   if (!res.ok) throw new Error("Failed to fetch cases");
   return res.json();
 }
@@ -82,47 +84,49 @@ export async function getNetworkGraph(filters: NetworkFilters = {}): Promise<Net
   const params = new URLSearchParams();
   if (filters.districtId) params.append("district_id", filters.districtId);
   if (filters.minLinks) params.append("min_cases", String(filters.minLinks));
-  
+
   const res = await fetch(`${API_BASE}/network/graph?${params.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch network graph");
   const data = await res.json();
-  
+
   // Client side filtering for name query and category if needed
   let filteredNodes: NetworkNode[] = data.nodes;
   let filteredEdges: NetworkEdge[] = data.edges;
-  
+
   if (filters.query || filters.category) {
     const q = filters.query ? filters.query.toLowerCase().trim() : null;
     const cat = filters.category;
-    
+
     // Step 1: Filter edges by category
     if (cat) {
       filteredEdges = filteredEdges.filter((e) => e.crimeCategory === cat);
     }
-    
+
     // Step 2: If query, find matching accused nodes and filter edges again
-    let matchingAccused = new Set<string>();
+    const matchingAccused = new Set<string>();
     if (q) {
       data.nodes.forEach((n: NetworkNode) => {
         if (n.type === "accused" && n.label.toLowerCase().includes(q)) {
           matchingAccused.add(n.id);
         }
       });
-      filteredEdges = filteredEdges.filter((e) => matchingAccused.has(e.source) || matchingAccused.has(e.target));
+      filteredEdges = filteredEdges.filter(
+        (e) => matchingAccused.has(e.source) || matchingAccused.has(e.target),
+      );
     }
-    
+
     // Step 3: Determine which nodes to keep
     const activeNodeIds = new Set<string>();
     filteredEdges.forEach((e) => {
       activeNodeIds.add(e.source);
       activeNodeIds.add(e.target);
     });
-    
+
     // Make sure we keep the matched accused nodes even if they have no edges left
     if (q) {
-      matchingAccused.forEach(id => activeNodeIds.add(id));
+      matchingAccused.forEach((id) => activeNodeIds.add(id));
     }
-    
+
     filteredNodes = data.nodes.filter((n: NetworkNode) => {
       if (activeNodeIds.has(n.id)) return true;
       // If we only filtered by category, we preserve stations for context
@@ -130,14 +134,14 @@ export async function getNetworkGraph(filters: NetworkFilters = {}): Promise<Net
       return false;
     });
   }
-  
+
   return {
     nodes: filteredNodes,
     edges: filteredEdges,
     stats: {
       offenderCount: filteredNodes.filter((n) => n.type === "accused").length,
-      linkedCaseCount: filteredNodes.filter((n) => n.type === "victim").length
-    }
+      linkedCaseCount: filteredNodes.filter((n) => n.type === "victim").length,
+    },
   };
 }
 
@@ -205,7 +209,7 @@ export interface Briefing {
 export async function getBriefing(districtId?: string): Promise<Briefing> {
   const params = new URLSearchParams();
   if (districtId) params.append("district_id", districtId);
-  
+
   const res = await fetch(`${API_BASE}/briefing?${params.toString()}`);
   if (!res.ok) throw new Error("Failed to fetch briefing");
   return res.json();

@@ -48,7 +48,13 @@ function BriefingPage() {
               </h1>
             </div>
           </div>
-          <Button size="sm" variant="outline" onClick={copy} disabled={!b} className="rounded-xl bg-black/20 border-white/5 hover:bg-white/5 hover:border-accent-amber/50 text-foreground transition-all shadow-inner">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={copy}
+            disabled={!b}
+            className="rounded-xl bg-black/20 border-white/5 hover:bg-white/5 hover:border-accent-amber/50 text-foreground transition-all shadow-inner"
+          >
             {copied ? (
               <Check className="w-3.5 h-3.5 mr-1.5 text-green-500" />
             ) : (
@@ -90,9 +96,11 @@ function BriefingPage() {
                 </span>
                 <span>
                   {b.scope} recorded{" "}
-                  <strong className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 font-bold tabular-nums text-lg drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">{b.totalCases}</strong> cases
-                  in the last 30 days, {b.trendPct >= 0 ? "up" : "down"} {Math.abs(b.trendPct)}%
-                  versus the prior 30-day window.
+                  <strong className="text-transparent bg-clip-text bg-gradient-to-r from-accent-amber to-amber-300 font-bold tabular-nums text-lg drop-shadow-[0_0_8px_rgba(245,158,11,0.3)]">
+                    {b.totalCases}
+                  </strong>{" "}
+                  cases in the last 30 days, {b.trendPct >= 0 ? "up" : "down"}{" "}
+                  {Math.abs(b.trendPct)}% versus the prior 30-day window.
                 </span>
               </p>
             </section>
@@ -127,8 +135,6 @@ function BriefingPage() {
                 ))}
               </ul>
             </section>
-
-
           </article>
         )}
       </div>

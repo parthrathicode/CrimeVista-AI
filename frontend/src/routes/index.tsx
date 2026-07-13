@@ -101,15 +101,15 @@ function CrimeMapPage() {
             >
               {/* Inner ambient gradient */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent-amber/10 via-transparent to-transparent pointer-events-none" />
-              
+
               <div className="relative p-1 rounded-full bg-accent-amber/20 border border-accent-amber/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]">
                 <AlertTriangle className="w-3 h-3 text-accent-amber shrink-0 drop-shadow-[0_0_8px_rgba(245,158,11,1)]" />
               </div>
-              
+
               <span className="relative text-[11px] font-medium text-amber-50/90 tracking-wide pr-2">
                 {a.title}
               </span>
-              
+
               <button
                 onClick={() => setDismissedAlerts((s) => new Set(s).add(a.id))}
                 className="relative p-1 hover:bg-accent-amber/20 text-accent-amber/60 hover:text-accent-amber rounded-full transition-colors ml-1"
@@ -302,7 +302,10 @@ function CrimeMapPage() {
             </div>
             <div className="mt-4 space-y-2">
               {stats.statusData.map((s) => (
-                <div key={s.name} className="flex items-center justify-between text-xs p-1.5 rounded-lg hover:bg-white/5 transition-colors">
+                <div
+                  key={s.name}
+                  className="flex items-center justify-between text-xs p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                >
                   <div className="flex items-center gap-2">
                     <span
                       className="w-2.5 h-2.5 rounded-full shadow-sm"
@@ -310,7 +313,9 @@ function CrimeMapPage() {
                     />
                     <span className="text-muted-foreground font-medium">{s.name}</span>
                   </div>
-                  <span className="tabular-nums notranslate text-foreground font-bold">{s.value}</span>
+                  <span className="tabular-nums notranslate text-foreground font-bold">
+                    {s.value}
+                  </span>
                 </div>
               ))}
             </div>
@@ -324,7 +329,10 @@ function CrimeMapPage() {
               </div>
               <div className="space-y-2">
                 {hotspots.map((h) => (
-                  <div key={h.id} className="text-xs p-3 bg-surface/40 rounded-xl border border-border/40 hover:border-accent-amber/30 transition-colors">
+                  <div
+                    key={h.id}
+                    className="text-xs p-3 bg-surface/40 rounded-xl border border-border/40 hover:border-accent-amber/30 transition-colors"
+                  >
                     <div className="flex items-center justify-between mb-2">
                       <Badge className="bg-red-500/10 text-red-400 border-red-500/20 text-[10px] font-mono px-1.5 py-0">
                         {h.caseCount} cases
@@ -333,7 +341,9 @@ function CrimeMapPage() {
                         {h.lat.toFixed(3)}, {h.lng.toFixed(3)}
                       </span>
                     </div>
-                    <div className="text-foreground/90 font-medium">Dominant: {h.dominantCrime}</div>
+                    <div className="text-foreground/90 font-medium">
+                      Dominant: {h.dominantCrime}
+                    </div>
                   </div>
                 ))}
               </div>

@@ -163,7 +163,7 @@ body {
 }
 
 /* Hide Google Translate Banner and reset body margin */
-.goog-te-banner-frame.skiptranslate, 
+.goog-te-banner-frame.skiptranslate,
 .goog-te-gadget-icon {
   display: none !important;
 }

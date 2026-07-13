@@ -49,7 +49,7 @@ function DistrictCardsPage() {
           : insights.map((d) => {
               const up = d.trendPct >= 0;
               return (
-              <button
+                <button
                   key={d.districtId}
                   onClick={() => {
                     setDistrictId(d.districtId);
@@ -131,7 +131,9 @@ function DistrictCardsPage() {
                     <MapPin className="w-3 h-3 text-accent-amber/70" />
                     Predicted Hotspot
                   </div>
-                  <div className="text-xs text-foreground/90 font-medium mb-4">{d.topHotspotLabel}</div>
+                  <div className="text-xs text-foreground/90 font-medium mb-4">
+                    {d.topHotspotLabel}
+                  </div>
 
                   <div className="mt-auto pt-4 w-full">
                     <div className="p-3 rounded-xl bg-accent-amber/10 border border-accent-amber/30 shadow-[0_0_15px_rgba(245,158,11,0.05)]">
