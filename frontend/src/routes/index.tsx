@@ -234,20 +234,21 @@ function CrimeMapPage() {
                     type="category"
                     dataKey="name"
                     width={140}
-                    tick={{ fill: "#94a3b8", fontSize: 10, fontWeight: 500 }}
+                    tick={{ fill: "var(--muted-foreground)", fontSize: 10, fontWeight: 500 }}
                     axisLine={false}
                     tickLine={false}
                   />
                   <Tooltip
                     cursor={{ fill: "rgba(255,255,255,0.05)" }}
                     contentStyle={{
-                      background: "rgba(15, 19, 26, 0.9)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
                       borderRadius: "12px",
                       fontSize: 11,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     }}
+                    itemStyle={{ color: "var(--foreground)" }}
+                    labelStyle={{ color: "var(--foreground)" }}
                   />
                   <Bar dataKey="value" radius={[0, 6, 6, 0]} barSize={16}>
                     {stats.topCats.map((c) => (
@@ -289,13 +290,14 @@ function CrimeMapPage() {
                   </Pie>
                   <Tooltip
                     contentStyle={{
-                      background: "rgba(15, 19, 26, 0.9)",
-                      backdropFilter: "blur(8px)",
-                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "var(--surface)",
+                      border: "1px solid var(--border)",
                       borderRadius: "12px",
                       fontSize: 11,
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.5)",
+                      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
                     }}
+                    itemStyle={{ color: "var(--foreground)" }}
+                    labelStyle={{ color: "var(--foreground)" }}
                   />
                 </PieChart>
               </ResponsiveContainer>

@@ -97,8 +97,12 @@ function ReportsPage() {
       a.download = `KSP_Analytics_${selectedType.replace(/ /g, "_")}.pdf`;
       document.body.appendChild(a);
       a.click();
-      window.URL.revokeObjectURL(blobUrl);
-      document.body.removeChild(a);
+      
+      // Delay revocation and removal slightly to allow the browser to initiate the download with the correct filename
+      setTimeout(() => {
+        window.URL.revokeObjectURL(blobUrl);
+        document.body.removeChild(a);
+      }, 100);
     } catch (err) {
       console.error(err);
       alert("Error generating report. Check console for details.");

@@ -349,17 +349,19 @@ function RiskDetail({ score }: { score: RiskScore }) {
                 type="category"
                 dataKey="feature"
                 width={150}
-                tick={{ fill: "#cbd5e1", fontSize: 11 }}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 11 }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
                 contentStyle={{
-                  background: "#1a1f26",
-                  border: "1px solid #2a3038",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
                   borderRadius: 4,
                   fontSize: 11,
                 }}
+                itemStyle={{ color: "var(--foreground)" }}
+                labelStyle={{ color: "var(--foreground)" }}
                 formatter={(v: number) => [`${v > 0 ? "+" : ""}${v} pts`, "Contribution"]}
               />
               <Bar
@@ -395,21 +397,23 @@ function RiskDetail({ score }: { score: RiskScore }) {
               data={score.monthlyTrend}
               margin={{ top: 8, right: 12, bottom: 0, left: -20 }}
             >
-              <CartesianGrid strokeDasharray="2 4" stroke="#2a3038" />
+              <CartesianGrid strokeDasharray="2 4" stroke="var(--border)" />
               <XAxis
                 dataKey="month"
-                tick={{ fill: "#94a3b8", fontSize: 10 }}
-                axisLine={{ stroke: "#2a3038" }}
+                tick={{ fill: "var(--muted-foreground)", fontSize: 10 }}
+                axisLine={{ stroke: "var(--border)" }}
                 tickLine={false}
               />
-              <YAxis tick={{ fill: "#94a3b8", fontSize: 10 }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fill: "var(--muted-foreground)", fontSize: 10 }} axisLine={false} tickLine={false} />
               <Tooltip
                 contentStyle={{
-                  background: "#1a1f26",
-                  border: "1px solid #2a3038",
+                  background: "var(--surface)",
+                  border: "1px solid var(--border)",
                   borderRadius: 4,
                   fontSize: 11,
                 }}
+                itemStyle={{ color: "var(--foreground)" }}
+                labelStyle={{ color: "var(--foreground)" }}
               />
               <Line
                 type="monotone"

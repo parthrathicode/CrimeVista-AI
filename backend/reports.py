@@ -265,6 +265,9 @@ def generate_district_report(district_id: str, report_type: str, date_range: str
 
     # Build PDF with the custom header/footer
     doc.build(elements, onFirstPage=draw_header_footer_first_page, onLaterPages=draw_header_footer_later_pages)
+    
+    buffer.seek(0)
+    return buffer
 
 def generate_offender_report(offender_data: dict) -> io.BytesIO:
     """

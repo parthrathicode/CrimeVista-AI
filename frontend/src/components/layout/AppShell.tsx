@@ -12,6 +12,8 @@ import {
   PanelLeftOpen,
   Globe,
   MapPin,
+  Sun,
+  Moon,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { getDistricts } from "@/services/api";
@@ -61,6 +63,31 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
     return false;
   });
+
+  const [theme, setTheme] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("theme") || "dark";
+    }
+    return "dark";
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    window.dispatchEvent(new CustomEvent("theme-change", { detail: nextTheme }));
+  };
+
+  useEffect(() => {
+    const root = window.document.documentElement;
+    if (theme === "light") {
+      root.classList.remove("dark");
+      root.classList.add("light");
+    } else {
+      root.classList.remove("light");
+      root.classList.add("dark");
+    }
+    localStorage.setItem("theme", theme);
+  }, [theme]);
 
   useEffect(() => {
     localStorage.setItem("sidebar_collapsed", String(isCollapsed));
@@ -187,6 +214,19 @@ export function AppShell({ children }: { children: ReactNode }) {
           </div>
           <div className="flex items-center gap-2">
             <div id="google_translate_element" className="hidden"></div>
+            
+            <button
+              onClick={toggleTheme}
+              className="p-2 shrink-0 rounded-xl bg-surface/50 border border-border hover:border-accent-amber/50 hover:bg-white/[0.02] text-muted-foreground hover:text-foreground transition-colors shadow-sm cursor-pointer"
+              title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            >
+              {theme === "dark" ? (
+                <Sun className="w-4 h-4 text-accent-amber" />
+              ) : (
+                <Moon className="w-4 h-4 text-accent-amber" />
+              )}
+            </button>
+
             <Select value={lang} onValueChange={handleLanguageChange}>
               <SelectTrigger className="w-[200px] shrink-0 h-9 rounded-xl bg-surface/50 border-border hover:border-accent-amber/50 hover:bg-white/[0.02] transition-colors notranslate shadow-sm">
                 <div className="flex items-center gap-2">

@@ -21,6 +21,7 @@ export default function CrimeMapClient({
   const mapRef = useRef<any>(null);
   const layersRef = useRef<any>(null);
   const LRef = useRef<any>(null);
+  const tilesRef = useRef<any>(null);
   const [mapReady, setMapReady] = useState(false);
 
   const districtCaseCounts = useMemo(() => {
@@ -50,11 +51,16 @@ export default function CrimeMapClient({
         maxBoundsViscosity: 0.9,
       });
       map.setView([15.3, 75.7], 7, { animate: false });
-      L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      const isLight = document.documentElement.classList.contains("light");
+      const tileUrl = isLight
+        ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+        : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+      const tiles = L.tileLayer(tileUrl, {
         attribution: "© OpenStreetMap © CARTO",
         subdomains: "abcd",
         maxZoom: 19,
       }).addTo(map);
+      tilesRef.current = tiles;
       mapRef.current = map;
       layersRef.current = L.layerGroup().addTo(map);
       resizeObserver = new ResizeObserver(() => map.invalidateSize());
@@ -77,6 +83,23 @@ export default function CrimeMapClient({
         mapRef.current.remove();
         mapRef.current = null;
       }
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleThemeChange = (e: Event) => {
+      const customEvent = e as CustomEvent<string>;
+      const nextTheme = customEvent.detail;
+      if (tilesRef.current) {
+        const nextUrl = nextTheme === "light"
+          ? "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
+          : "https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png";
+        tilesRef.current.setUrl(nextUrl);
+      }
+    };
+    window.addEventListener("theme-change", handleThemeChange);
+    return () => {
+      window.removeEventListener("theme-change", handleThemeChange);
     };
   }, []);
 
