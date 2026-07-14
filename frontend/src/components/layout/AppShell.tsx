@@ -157,8 +157,8 @@ export function AppShell({ children }: { children: ReactNode }) {
 
         <div className="h-16 flex items-center px-4 border-b border-border overflow-hidden select-none">
           <div className="flex items-center gap-3 cursor-pointer group">
-            <div className="w-8 h-8 shrink-0 rounded-lg bg-accent-amber/10 border border-accent-amber/30 flex items-center justify-center shadow-[0_0_10px_rgba(245,158,11,0.1)] group-hover:shadow-[0_0_15px_rgba(245,158,11,0.2)] group-hover:border-accent-amber/50 transition-all">
-              <Activity className="w-4 h-4 shrink-0 text-accent-amber drop-shadow-[0_0_5px_rgba(245,158,11,0.8)]" />
+            <div className="w-8 h-8 shrink-0 rounded-lg bg-white border border-black/10 dark:border-white/10 flex items-center justify-center shadow-sm group-hover:shadow-md transition-all p-1">
+              <img src="/ksp_logo.png" alt="KSP Logo" className="w-full h-full object-contain" />
             </div>
             {!isCollapsed && (
               <div className="leading-none shrink-0 whitespace-nowrap">

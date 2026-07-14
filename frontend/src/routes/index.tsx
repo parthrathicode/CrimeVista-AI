@@ -97,7 +97,7 @@ function CrimeMapPage() {
           {visibleAlerts.map((a) => (
             <div
               key={a.id}
-              className="relative flex items-center gap-2 px-3 py-1.5 mx-auto w-fit max-w-3xl rounded-full bg-[#1a140d]/90 border border-accent-amber/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
+              className="relative flex items-center gap-2 px-3 py-1.5 mx-auto w-fit max-w-3xl rounded-full bg-amber-50/90 dark:bg-[#1a140d]/90 border border-amber-300 dark:border-accent-amber/30 shadow-[0_0_15px_rgba(245,158,11,0.1)]"
             >
               {/* Inner ambient gradient */}
               <div className="absolute inset-0 rounded-full bg-gradient-to-r from-accent-amber/10 via-transparent to-transparent pointer-events-none" />
@@ -106,7 +106,7 @@ function CrimeMapPage() {
                 <AlertTriangle className="w-3 h-3 text-accent-amber shrink-0 drop-shadow-[0_0_8px_rgba(245,158,11,1)]" />
               </div>
 
-              <span className="relative text-[11px] font-medium text-amber-50/90 tracking-wide pr-2">
+              <span className="relative text-[11px] font-medium text-amber-950 dark:text-amber-50/90 tracking-wide pr-2">
                 {a.title}
               </span>
 

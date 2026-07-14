@@ -50,7 +50,7 @@ export default function NetworkGraphClient({ graph, onNodeClick }: Props) {
             graphData={data}
             width={size.w}
             height={size.h}
-            backgroundColor="#0b0f14"
+            backgroundColor="transparent"
             nodeRelSize={4}
             nodeVal={(n: any) => Math.max(2, n.linkedCaseCount)}
             nodeLabel={(n: any) => `${n.label}\n${n.type} · ${n.linkedCaseCount} links`}
@@ -62,7 +62,8 @@ export default function NetworkGraphClient({ graph, onNodeClick }: Props) {
               const size = Math.max(4, Math.sqrt(node.linkedCaseCount || 1) * 3.5);
               const color = TYPE_COLOR[node.type as keyof typeof TYPE_COLOR];
               ctx.fillStyle = color;
-              ctx.strokeStyle = "#0b0f14";
+              const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark');
+              ctx.strokeStyle = isDark ? "#0b0f14" : "#f8fafc";
               ctx.lineWidth = 1.5;
               if (node.type === "station") {
                 ctx.fillRect(node.x - size, node.y - size, size * 2, size * 2);

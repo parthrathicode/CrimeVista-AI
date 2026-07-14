@@ -163,7 +163,7 @@ function NetworkPage() {
       </div>
 
       {/* Graph */}
-      <div className="flex-1 relative min-h-0 bg-[#0b0f14]">
+      <div className="flex-1 relative min-h-0 bg-slate-50 dark:bg-[#0b0f14]">
         <ClientOnly fallback={<Skeleton className="w-full h-full" />}>
           <Suspense fallback={<Skeleton className="w-full h-full" />}>
             {graph && !isLoading ? (
@@ -192,10 +192,10 @@ function NetworkPage() {
       </div>
 
       <Sheet open={!!selectedNode} onOpenChange={(o) => !o && setSelectedNode(null)}>
-        <SheetContent className="w-[480px] sm:max-w-[480px] bg-surface/90 backdrop-blur-2xl border-l border-white/5 shadow-[-10px_0_30px_rgba(0,0,0,0.5)] overflow-y-auto">
+        <SheetContent className="w-[480px] sm:max-w-[480px] bg-surface/90 backdrop-blur-2xl border-l border-border shadow-2xl overflow-y-auto">
           <SheetHeader>
-            <SheetTitle className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white to-white/70">
-              {detail ? detail.name : (selectedNode ?? "Node")}
+            <SheetTitle className="text-2xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-foreground to-foreground/70">
+              {detail ? detail.name : (selectedNode?.startsWith("stn_") ? "Police Station" : selectedNode?.startsWith("vic_") ? "Victim Details" : "Node Details")}
             </SheetTitle>
           </SheetHeader>
           {offenderId && detail ? (
@@ -285,11 +285,14 @@ function NetworkPage() {
               </div>
             </div>
           ) : (
-            <div className="mt-4 text-xs text-muted-foreground px-1">
-              {selectedNode?.startsWith("vic-") &&
-                "Victim node — click on an accused (red) node for a full offender profile."}
-              {selectedNode?.startsWith("stn-") &&
-                "Police station node — click on an accused (red) node for a full offender profile."}
+            <div className="mt-4 p-4 rounded-xl border border-border bg-surface/50 text-sm text-muted-foreground px-4 shadow-inner text-center">
+              {selectedNode?.startsWith("vic_") ? (
+                <p>This is a <strong>Victim</strong> node.<br/><br/>Click on an accused (red) node to view their full criminal profile and MO signature.</p>
+              ) : selectedNode?.startsWith("stn_") ? (
+                <p>This is a <strong>Police Station</strong> node.<br/><br/>Click on an accused (red) node to view their full criminal profile and MO signature.</p>
+              ) : (
+                <p>Click on an accused (red) node to view their full criminal profile and MO signature.</p>
+              )}
             </div>
           )}
         </SheetContent>

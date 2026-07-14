@@ -110,3 +110,8 @@ npm install
 npm run dev
 ```
 The React App will be accessible at `http://localhost:5173`.
+
+---
+
+## Disclaimer
+The **Karnataka State Police (Government of Karnataka)** logo and branding used in this prototype are the property of the Government of Karnataka and are used solely for demonstration purposes during the Datathon.
