@@ -43,6 +43,7 @@ graph TD
 5. **Automated Official PDF Generation (ReportLab):** Dynamically generates authentic, datathon-ready Karnataka State Police analytics reports with official footers and digital signature verification mockups.
 6. **Raw Data Export (CSV):** Dedicated API endpoints (`/api/districts/{id}/export-csv`) to stream filtered intelligence records directly to investigators.
 7. **Serverless Deployment (Zoho Catalyst):** Full CI/CD and deployment configuration setup for Zoho Catalyst AppSail (Backend) and Web Client Hosting (Frontend).
+8. **Light/Dark Theme Support:** A dynamic, accessible UI with contrast-optimized charts for both light and dark environments, improving usability during nighttime operations.
 
 ---
 
