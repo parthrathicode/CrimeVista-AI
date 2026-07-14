@@ -351,7 +351,7 @@ def generate_offender_report(offender_data: dict) -> io.BytesIO:
         
     case_table = Table(case_data, colWidths=[1.0*inch, 1.0*inch, 2.0*inch, 2.0*inch, 1.4*inch])
     case_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.black),
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#0F172A')),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
         ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
         ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),

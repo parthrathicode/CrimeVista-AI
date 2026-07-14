@@ -163,7 +163,7 @@ function NetworkPage() {
       </div>
 
       {/* Graph */}
-      <div className="flex-1 relative min-h-0 bg-[#0b0f14]">
+      <div className="flex-1 relative min-h-0 bg-slate-50 dark:bg-[#0b0f14]">
         <ClientOnly fallback={<Skeleton className="w-full h-full" />}>
           <Suspense fallback={<Skeleton className="w-full h-full" />}>
             {graph && !isLoading ? (
