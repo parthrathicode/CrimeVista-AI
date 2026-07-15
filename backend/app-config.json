@@ -1,7 +1,11 @@
 {
   "name": "CrimeVistaAPI",
   "type": "appsail",
-  "env": "python311",
-  "stack": "python311",
-  "command": "uvicorn main:app --host 0.0.0.0 --port ${X_ZOHO_CATALYST_LISTEN_PORT}"
+  "env": "python_3_9",
+  "stack": "python_3_9",
+  "command": "sh start.sh",
+  "build_path": ".",
+  "scripts": {
+    "predeploy": "rm -rf ./lib && mkdir -p ./lib && python3 -m pip install --upgrade --no-cache-dir --target ./lib --platform manylinux2014_x86_64 --python-version 39 --implementation cp --abi cp39 --only-binary=:all: fastapi==0.115.6 uvicorn==0.34.0 pydantic==2.10.4 pydantic-core==2.27.2 exceptiongroup==1.2.2 sqlalchemy==2.0.36 numpy==1.26.4 scipy==1.13.1 scikit-learn==1.5.2 pandas==2.2.3 joblib==1.4.2 reportlab==4.2.5 networkx==3.2.1 && python3 -m pip install --upgrade --no-cache-dir --target ./lib python-louvain==0.16 --no-deps"
+  }
 }

@@ -1,7 +1,38 @@
 import os
 import sys
+
+
+def _add_bundled_lib_if_compatible():
+    """Load Zoho AppSail bundled dependencies only when their Python ABI matches."""
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    lib_dir = os.path.join(app_dir, "lib")
+    if not os.path.isdir(lib_dir):
+        return
+
+    current_tag = sys.implementation.cache_tag
+    compiled_extensions = []
+    for root, _, files in os.walk(lib_dir):
+        compiled_extensions.extend(name for name in files if name.endswith(".so"))
+        if compiled_extensions:
+            break
+
+    if compiled_extensions and not any(current_tag in name for name in compiled_extensions):
+        print(
+            f"Skipping bundled lib because it does not match this Python ABI "
+            f"({current_tag}). Rebuild backend/lib for this runtime.",
+            flush=True,
+        )
+        return
+
+    sys.path.insert(0, lib_dir)
+
+
+_add_bundled_lib_if_compatible()
+
 import csv
 import io
+import time
+import json
 from fastapi import FastAPI, Query, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,16 +41,44 @@ from sqlalchemy.orm import sessionmaker, joinedload
 from datetime import datetime, timedelta
 from typing import Optional, List
 
+# Simple time-based response cache for expensive ML endpoints
+_response_cache: dict = {}
+_CACHE_TTL = 300  # 5 minutes
+
+def cached_response(cache_key: str, compute_fn):
+    """Return cached result if fresh, otherwise compute and cache."""
+    now = time.time()
+    entry = _response_cache.get(cache_key)
+    if entry and (now - entry["ts"]) < _CACHE_TTL:
+        return entry["data"]
+    result = compute_fn()
+    _response_cache[cache_key] = {"ts": now, "data": result}
+    return result
+
 # Add parent directory to path so we can import backend
 sys.path.append(os.path.abspath(os.path.dirname(__file__)))
 
 from models import (
     Base, District, Unit, CaseMaster, CrimeSubHead, CrimeHead, Accused, Victim
 )
-from ml.hotspot_detection import detect_hotspots, calculate_alerts
-from ml.network_analysis import get_repeat_offenders, get_network_graph
-from ml.risk_prediction import predict_risk, get_monthly_trend
-from ml.anomaly_detection import detect_anomalies
+# Proxy functions for lazy-loading ML modules to prevent crashes during background pip install
+def _try_import_and_call(module_name, func_name, *args, **kwargs):
+    try:
+        import importlib
+        module = importlib.import_module(module_name)
+        func = getattr(module, func_name)
+        return func(*args, **kwargs)
+    except ImportError:
+        raise HTTPException(status_code=503, detail="ML Models are still downloading (Cold Start). Please wait 30 seconds and refresh.")
+
+def detect_hotspots(*args, **kwargs): return _try_import_and_call("ml.hotspot_detection", "detect_hotspots", *args, **kwargs)
+def calculate_alerts(*args, **kwargs): return _try_import_and_call("ml.hotspot_detection", "calculate_alerts", *args, **kwargs)
+def get_repeat_offenders(*args, **kwargs): return _try_import_and_call("ml.network_analysis", "get_repeat_offenders", *args, **kwargs)
+def get_network_graph(*args, **kwargs): return _try_import_and_call("ml.network_analysis", "get_network_graph", *args, **kwargs)
+def predict_risk(*args, **kwargs): return _try_import_and_call("ml.risk_prediction", "predict_risk", *args, **kwargs)
+def get_risk_snapshot(*args, **kwargs): return _try_import_and_call("ml.risk_prediction", "get_risk_snapshot", *args, **kwargs)
+def get_monthly_trend(*args, **kwargs): return _try_import_and_call("ml.risk_prediction", "get_monthly_trend", *args, **kwargs)
+def detect_anomalies(*args, **kwargs): return _try_import_and_call("ml.anomaly_detection", "detect_anomalies", *args, **kwargs)
 
 DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "crime_vista.db"))
 ENGINE_URL = f"sqlite:///{DB_PATH}"
@@ -37,6 +96,24 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/")
+def root():
+    return {"ok": True, "service": "CrimeVista AI API"}
+
+@app.get("/api/health")
+def health_check():
+    db = Session()
+    try:
+        return {
+            "ok": True,
+            "python": sys.version.split()[0],
+            "database": DB_PATH,
+            "districts": db.query(District).count(),
+            "cases": db.query(CaseMaster).count(),
+        }
+    finally:
+        db.close()
 
 def get_db():
     db = Session()
@@ -140,7 +217,7 @@ def get_district_hotspots(id: str, date_days: Optional[int] = None):
 
 @app.get("/api/alerts")
 def get_alerts():
-    return calculate_alerts()
+    return cached_response("alerts", lambda: calculate_alerts())
 
 @app.get("/api/network/graph")
 def get_network_graph_data(
@@ -151,11 +228,12 @@ def get_network_graph_data(
     if district_id and district_id != "all" and district_id.isdigit():
         filters["districtId"] = int(district_id)
     filters["minLinks"] = min_cases
-    return get_network_graph(filters)
+    key = f"network_graph_{district_id}_{min_cases}"
+    return cached_response(key, lambda: get_network_graph(filters))
 
 @app.get("/api/network/repeat-offenders")
 def get_network_repeat_offenders(min_cases: Optional[int] = Query(2, ge=1)):
-    return get_repeat_offenders(min_cases)
+    return cached_response(f"repeat_offenders_{min_cases}", lambda: get_repeat_offenders(min_cases))
 
 @app.get("/api/network/offender/{id}")
 def get_offender_detail_api(id: str):
@@ -169,36 +247,12 @@ def get_offender_detail_api(id: str):
 
 @app.get("/api/risk/leaderboard")
 def get_risk_leaderboard():
-    db = Session()
-    districts = db.query(District).all()
-    subheads = db.query(CrimeSubHead).all()
-    db.close()
-    
-    leaderboard = []
-    for d in districts:
-        for sh in subheads:
-            res = predict_risk(d.DistrictID, sh.CrimeSubHeadID)
-            if "error" not in res:
-                leaderboard.append(res)
-                
-    # Sort descending by score
-    leaderboard.sort(key=lambda x: x["score"], reverse=True)
-    return leaderboard[:10]
+    scores = cached_response("risk_scores", lambda: get_risk_snapshot(datetime.now().strftime("%Y-%m-%d-%H")))
+    return scores[:10]
 
 @app.get("/api/risk/scores")
 def get_all_risk_scores():
-    db = Session()
-    districts = db.query(District).all()
-    subheads = db.query(CrimeSubHead).all()
-    db.close()
-    
-    scores = []
-    for d in districts:
-        for sh in subheads:
-            res = predict_risk(d.DistrictID, sh.CrimeSubHeadID)
-            if "error" not in res:
-                scores.append(res)
-    return scores
+    return cached_response("risk_scores", lambda: get_risk_snapshot(datetime.now().strftime("%Y-%m-%d-%H")))
 
 @app.get("/api/risk/{district_id}/{crime_sub_head_id}")
 def get_risk_detail_api(district_id: int, crime_sub_head_id: int):
@@ -209,14 +263,13 @@ def get_risk_detail_api(district_id: int, crime_sub_head_id: int):
 
 @app.get("/api/anomalies")
 def get_anomaly_cases():
-    return detect_anomalies(limit=15)
+    return cached_response("anomalies", lambda: detect_anomalies(limit=15))
 
 @app.get("/api/districts/insights")
 def get_districts_insights():
     db = Session()
     districts = db.query(District).all()
     cases_all = db.query(CaseMaster).options(joinedload(CaseMaster.major_head), joinedload(CaseMaster.minor_head)).all()
-    subheads = {sh.CrimeSubHeadID: sh.CrimeHeadName for sh in db.query(CrimeSubHead).all()}
     db.close()
     
     # Calculate insights
@@ -226,7 +279,12 @@ def get_districts_insights():
     t60 = now - timedelta(days=60)
     
     ro_list = get_repeat_offenders(min_cases=2)
-    alerts = calculate_alerts()
+    risk_rows = get_risk_snapshot(datetime.now().strftime("%Y-%m-%d-%H"))
+    risk_by_district = {}
+    for row in risk_rows:
+        current = risk_by_district.get(row["districtId"])
+        if current is None or row["score"] > current["score"]:
+            risk_by_district[row["districtId"]] = row
     
     for d in districts:
         d_cases = [c for c in cases_all if c.district_id == d.DistrictID]
@@ -256,20 +314,9 @@ def get_districts_insights():
         # Offenders
         offender_count = len([o for o in ro_list if o["districtId"] == str(d.DistrictID)])
         
-        # Risk (evaluate top risk subhead for this district)
-        top_risk_score = 0
-        top_risk_band = "Low"
-        
-        # Check cyber or property subheads
-        db = Session()
-        sh_list = db.query(CrimeSubHead).all()
-        db.close()
-        for sh in sh_list:
-            risk_res = predict_risk(d.DistrictID, sh.CrimeSubHeadID)
-            if "error" not in risk_res:
-                if risk_res["score"] > top_risk_score:
-                    top_risk_score = risk_res["score"]
-                    top_risk_band = risk_res["band"]
+        district_risk = risk_by_district.get(str(d.DistrictID))
+        top_risk_score = district_risk["score"] if district_risk else 0
+        top_risk_band = district_risk["band"] if district_risk else "Low"
                     
         suggested_action = "Review station patrol density."
         if dominant_category == "Cyber Crime":
@@ -378,8 +425,12 @@ def get_weekly_briefing(district_id: Optional[str] = None):
         "plainText": "\n".join(plain_text_lines)
     }
 
-from fastapi.responses import StreamingResponse
-from reports import generate_district_report, generate_offender_report
+def generate_district_report(*args, **kwargs):
+    return _try_import_and_call("reports", "generate_district_report", *args, **kwargs)
+
+
+def generate_offender_report(*args, **kwargs):
+    return _try_import_and_call("reports", "generate_offender_report", *args, **kwargs)
 
 @app.get("/api/reports/generate")
 def generate_pdf_report(

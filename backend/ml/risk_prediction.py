@@ -4,8 +4,9 @@ import pickle
 import numpy as np
 from datetime import datetime, timedelta
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, joinedload
 from functools import lru_cache
+from collections import defaultdict
 
 # Add parent directory to path so we can import backend.models
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -29,6 +30,51 @@ FEATURE_NAMES = [
     "Repeat Offender Count"
 ]
 
+
+def _score_from_features(features):
+    score = min(max((features[0] * 12.0 + features[2] * 20.0 + features[4] * 5.0), 5.0), 95.0)
+    if score < 30:
+        band = "Low"
+    elif score < 65:
+        band = "Medium"
+    else:
+        band = "High"
+
+    contributions = [
+        {"feature": FEATURE_NAMES[0], "points": round(features[0] * 8.0, 2)},
+        {"feature": FEATURE_NAMES[1], "points": round(features[1] * -3.0, 2)},
+        {"feature": FEATURE_NAMES[2], "points": round(features[2] * 15.0, 2)},
+        {"feature": FEATURE_NAMES[3], "points": round(features[3] * 4.0, 2)},
+        {"feature": FEATURE_NAMES[4], "points": round(features[4] * 10.0, 2)},
+        {"feature": FEATURE_NAMES[5], "points": round(features[5] * 2.0, 2)},
+    ]
+    return round(score, 1), band, contributions
+
+
+def _build_monthly_trend_from_dates(dates, predicted_score, now):
+    monthly_data = {}
+    for i in range(12):
+        month_date = now - timedelta(days=i * 30)
+        monthly_data[month_date.strftime("%b %y")] = 0
+
+    for case_date in dates:
+        m_key = case_date.strftime("%b %y")
+        if m_key in monthly_data:
+            monthly_data[m_key] += 1
+
+    trend_list = []
+    for i in range(11, -1, -1):
+        month_date = now - timedelta(days=i * 30)
+        m_key = month_date.strftime("%b %y")
+        trend_list.append({"month": m_key, "cases": monthly_data.get(m_key, 0)})
+
+    next_month = now + timedelta(days=30)
+    predicted_cases = max(round(predicted_score / 10.0), 0)
+    trend_list.append(
+        {"month": next_month.strftime("%b %y"), "cases": predicted_cases, "isPredicted": True}
+    )
+    return trend_list
+
 def get_session():
     engine = create_engine(ENGINE_URL)
     Session = sessionmaker(bind=engine)
@@ -49,6 +95,93 @@ def load_model_once():
         else:
             _MODEL_DATA_CACHE = {}
     return _MODEL_DATA_CACHE
+
+
+@lru_cache(maxsize=8)
+def get_risk_snapshot(cache_key):
+    """
+    Build a bulk risk snapshot using one DB pass so AppSail endpoints do not time out.
+    """
+    session = get_session()
+    now = datetime.now()
+    t90 = now - timedelta(days=90)
+    t360 = now - timedelta(days=360)
+    target_month = now.month
+
+    cases = (
+        session.query(CaseMaster)
+        .options(joinedload(CaseMaster.major_head), joinedload(CaseMaster.minor_head))
+        .all()
+    )
+    districts = {d.DistrictID: d.DistrictName for d in session.query(District).all()}
+    session.close()
+
+    combo_dates = defaultdict(list)
+    combo_meta = {}
+    district_ids = set()
+
+    for case in cases:
+        combo_key = (case.district_id, case.CrimeMinorHeadID)
+        combo_dates[combo_key].append(case.CrimeRegisteredDate)
+        combo_meta[combo_key] = (
+            districts.get(case.district_id, str(case.district_id)),
+            case.major_head.CrimeGroupName,
+            case.minor_head.CrimeHeadName,
+        )
+        district_ids.add(case.district_id)
+
+    hotspot_density_by_district = {}
+    for district_id in district_ids:
+        hotspots = detect_hotspots(district_id, date_days=90)
+        hotspot_density_by_district[district_id] = sum(h["densityScore"] for h in hotspots) if hotspots else 0.0
+
+    repeat_offender_count_by_district = {
+        district_id: get_district_repeat_offender_count(district_id) for district_id in district_ids
+    }
+
+    scores = []
+    for (district_id, sub_head_id), dates in combo_dates.items():
+        count_3mo = sum(1 for d in dates if d >= t90.date())
+        count_12mo = sum(1 for d in dates if d >= t360.date())
+        prior_3mo_avg = count_3mo / 3.0
+        prior_12mo_avg = count_12mo / 12.0
+
+        if prior_12mo_avg == 0:
+            trend_ratio = 1.0 if prior_3mo_avg > 0 else 0.0
+        else:
+            trend_ratio = prior_3mo_avg / prior_12mo_avg
+
+        month_counts = defaultdict(int)
+        for case_date in dates:
+            month_counts[case_date.month] += 1
+        seasonal_index = month_counts.get(target_month, 0) / 2.0
+
+        features = [
+            prior_3mo_avg,
+            prior_12mo_avg,
+            trend_ratio,
+            seasonal_index,
+            hotspot_density_by_district.get(district_id, 0.0),
+            repeat_offender_count_by_district.get(district_id, 0.0),
+        ]
+        score, band, contributions = _score_from_features(features)
+        district_name, category_name, sub_type_name = combo_meta[(district_id, sub_head_id)]
+
+        scores.append(
+            {
+                "districtId": str(district_id),
+                "districtName": district_name,
+                "category": category_name,
+                "subType": sub_type_name,
+                "score": score,
+                "band": band,
+                "contributions": contributions,
+                "monthlyTrend": _build_monthly_trend_from_dates(dates, score, now),
+            }
+        )
+
+    scores.sort(key=lambda row: row["score"], reverse=True)
+    return scores
 
 # Cache repeat offenders count per district
 @lru_cache(maxsize=128)
@@ -139,19 +272,29 @@ def predict_risk(district_id, sub_head_id):
     """
     Returns risk score, risk band, and SHAP explainability values for the district + crime subtype.
     """
+    snapshot = get_risk_snapshot(datetime.now().strftime("%Y-%m-%d-%H"))
+
     session = get_session()
     district = session.query(District).filter(District.DistrictID == district_id).first()
     subhead = session.query(CrimeSubHead).filter(CrimeSubHead.CrimeSubHeadID == sub_head_id).first()
-    
     if not district or not subhead:
         session.close()
         return {"error": "Invalid district_id or sub_head_id"}
-    
-    # Extract values from ORM objects BEFORE closing the session to avoid DetachedInstanceError
     district_name = district.DistrictName
     category_name = subhead.crime_head.CrimeGroupName
     sub_type_name = subhead.CrimeHeadName
-    
+    session.close()
+
+    for row in snapshot:
+        if (
+            row["districtId"] == str(district_id)
+            and row["districtName"] == district_name
+            and row["category"] == category_name
+            and row["subType"] == sub_type_name
+        ):
+            return row
+
+    session = get_session()
     features = get_features_for_combo(session, district_id, sub_head_id, datetime.now())
     session.close()
     
@@ -159,23 +302,7 @@ def predict_risk(district_id, sub_head_id):
     model_data = load_model_once()
     if not model_data:
         # Fallback explanation if model is not trained yet (to prevent crashes)
-        score = min(max((features[0] * 12.0 + features[2] * 20.0 + features[4] * 5.0), 5.0), 95.0)
-        
-        if score < 30:
-            band = "Low"
-        elif score < 65:
-            band = "Medium"
-        else:
-            band = "High"
-            
-        contributions = [
-            {"feature": FEATURE_NAMES[0], "points": round(features[0] * 8.0, 2)},
-            {"feature": FEATURE_NAMES[1], "points": round(features[1] * -3.0, 2)},
-            {"feature": FEATURE_NAMES[2], "points": round(features[2] * 15.0, 2)},
-            {"feature": FEATURE_NAMES[3], "points": round(features[3] * 4.0, 2)},
-            {"feature": FEATURE_NAMES[4], "points": round(features[4] * 10.0, 2)},
-            {"feature": FEATURE_NAMES[5], "points": round(features[5] * 2.0, 2)}
-        ]
+        score, band, contributions = _score_from_features(features)
         
         return {
             "districtId": str(district_id),

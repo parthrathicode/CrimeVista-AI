@@ -19,7 +19,7 @@ export const Route = createFileRoute("/briefing")({
 function BriefingPage() {
   const { districtId } = useSelectedDistrict();
   const [copied, setCopied] = useState(false);
-  const { data: b, isLoading } = useQuery({
+  const { data: b, isLoading, isError, error } = useQuery({
     queryKey: ["briefing", districtId],
     queryFn: () => getBriefing(districtId ?? undefined),
   });
@@ -64,7 +64,16 @@ function BriefingPage() {
           </Button>
         </div>
 
-        {isLoading || !b ? (
+        {isError ? (
+          <div className="rounded-2xl border border-white/5 bg-black/20 p-8 shadow-inner">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              Briefing could not be loaded
+            </div>
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              {error instanceof Error ? error.message : "Please refresh and try again."}
+            </div>
+          </div>
+        ) : isLoading || !b ? (
           <div className="space-y-3">
             <Skeleton className="h-6 w-1/2" />
             <Skeleton className="h-32 w-full" />

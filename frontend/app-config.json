@@ -1,0 +1,8 @@
+{
+  "name": "CrimeVistaWeb",
+  "type": "appsail",
+  "env": "node18",
+  "stack": "node18",
+  "command": "node server.cjs",
+  "build_path": "."
+}

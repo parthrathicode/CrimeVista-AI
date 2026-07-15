@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { getNetworkGraph } from "@/services/api";
+import { API_BASE, getNetworkGraph } from "@/services/api";
 import { useSelectedDistrict } from "@/lib/selected-district";
 import { FileText, Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,13 +75,13 @@ function ReportsPage() {
     try {
       let url = "";
       if (selectedType === "Suspect/Offender Profile") {
-        url = `http://127.0.0.1:8000/api/reports/offender/${encodeURIComponent(offenderQuery)}`;
+        url = `${API_BASE}/reports/offender/${encodeURIComponent(offenderQuery)}`;
       } else {
         const params = new URLSearchParams({ report_type: selectedType });
         if (districtId) {
           params.append("district_id", districtId);
         }
-        url = `http://127.0.0.1:8000/api/reports/generate?${params.toString()}`;
+        url = `${API_BASE}/reports/generate?${params.toString()}`;
       }
 
       const response = await fetch(url);

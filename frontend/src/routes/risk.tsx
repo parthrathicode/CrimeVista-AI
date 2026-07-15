@@ -58,7 +58,7 @@ function RiskPage() {
     queryKey: ["risk-leaderboard"],
     queryFn: () => getRiskLeaderboard(5),
   });
-  const { data: allScores = [], isLoading } = useQuery({
+  const { data: allScores = [], isLoading, isError, error } = useQuery({
     queryKey: ["risk-scores"],
     queryFn: getRiskScores,
   });
@@ -136,7 +136,18 @@ function RiskPage() {
             </div>
           </div>
           <div className="flex-1 overflow-auto">
-            {isLoading ? (
+            {isError ? (
+              <div className="p-4">
+                <div className="rounded-2xl border border-white/5 bg-black/20 p-6 shadow-inner">
+                  <div className="text-sm font-semibold text-foreground/80 mb-2">
+                    Risk matrix could not be loaded
+                  </div>
+                  <div className="text-xs text-muted-foreground leading-relaxed">
+                    {error instanceof Error ? error.message : "Please refresh and try again."}
+                  </div>
+                </div>
+              </div>
+            ) : isLoading ? (
               <div className="p-4 space-y-2">
                 {Array.from({ length: 8 }).map((_, i) => (
                   <Skeleton key={i} className="h-8 w-full" />

@@ -26,7 +26,7 @@ const BAND_STYLES: Record<RiskBand, string> = {
 function DistrictCardsPage() {
   const { setDistrictId } = useSelectedDistrict();
   const navigate = useNavigate();
-  const { data: insights = [], isLoading } = useQuery({
+  const { data: insights = [], isLoading, isError, error } = useQuery({
     queryKey: ["district-insights"],
     queryFn: getDistrictInsights,
   });
@@ -44,7 +44,16 @@ function DistrictCardsPage() {
       </div>
 
       <div className="p-4 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-        {isLoading
+        {isError ? (
+          <div className="col-span-full rounded-2xl border border-white/5 bg-black/20 p-8 shadow-inner">
+            <div className="text-sm font-semibold text-foreground/80 mb-2">
+              District cards could not be loaded
+            </div>
+            <div className="text-xs text-muted-foreground leading-relaxed">
+              {error instanceof Error ? error.message : "Please refresh and try again."}
+            </div>
+          </div>
+        ) : isLoading
           ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-56" />)
           : insights.map((d) => {
               const up = d.trendPct >= 0;

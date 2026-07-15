@@ -46,7 +46,7 @@ function NetworkPage() {
   const [showAutocomplete, setShowAutocomplete] = useState(false);
 
   const { data: districts = [] } = useQuery({ queryKey: ["districts"], queryFn: getDistricts });
-  const { data: graph, isLoading } = useQuery({
+  const { data: graph, isLoading, isError, error } = useQuery({
     queryKey: ["network", query, districtId, category, minLinks],
     queryFn: () =>
       getNetworkGraph({
@@ -164,15 +164,28 @@ function NetworkPage() {
 
       {/* Graph */}
       <div className="flex-1 relative min-h-0 bg-slate-50 dark:bg-[#0b0f14]">
-        <ClientOnly fallback={<Skeleton className="w-full h-full" />}>
-          <Suspense fallback={<Skeleton className="w-full h-full" />}>
-            {graph && !isLoading ? (
+        {isError ? (
+          <div className="absolute inset-0 flex items-center justify-center p-8 text-center">
+            <div>
+              <div className="text-sm font-semibold text-foreground/80 mb-2">
+                Network data could not be loaded
+              </div>
+              <div className="text-xs text-muted-foreground max-w-sm leading-relaxed">
+                {error instanceof Error ? error.message : "Please refresh and try again."}
+              </div>
+            </div>
+          </div>
+        ) : (
+          <ClientOnly fallback={<Skeleton className="w-full h-full" />}>
+            <Suspense fallback={<Skeleton className="w-full h-full" />}>
+              {graph && !isLoading ? (
               <NetworkGraphClient graph={graph} onNodeClick={setSelectedNode} />
             ) : (
               <Skeleton className="w-full h-full" />
-            )}
-          </Suspense>
-        </ClientOnly>
+              )}
+            </Suspense>
+          </ClientOnly>
+        )}
 
         {/* Legend */}
         <div className="absolute top-3 right-3 bg-surface/90 backdrop-blur border border-border rounded-xl p-3 text-[11px] space-y-1.5 z-10">

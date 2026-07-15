@@ -56,7 +56,15 @@ export function AppShell({ children }: { children: ReactNode }) {
     queryFn: getDistricts,
   });
 
-  const [lang, setLang] = useState("en");
+  const [lang, setLang] = useState(() => {
+    if (typeof window !== "undefined") {
+      const saved = localStorage.getItem("preferred_lang");
+      if (saved) return saved;
+      const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
+      if (match) return match[1];
+    }
+    return "en";
+  });
   const [isCollapsed, setIsCollapsed] = useState(() => {
     if (typeof window !== "undefined") {
       return localStorage.getItem("sidebar_collapsed") === "true";
@@ -79,6 +87,7 @@ export function AppShell({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     const root = window.document.documentElement;
+    root.lang = lang === "en" ? "en" : lang;
     if (theme === "light") {
       root.classList.remove("dark");
       root.classList.add("light");
@@ -93,28 +102,61 @@ export function AppShell({ children }: { children: ReactNode }) {
     localStorage.setItem("sidebar_collapsed", String(isCollapsed));
   }, [isCollapsed]);
 
+  const applyTranslateCookie = (newLang: string) => {
+    const expire = "Thu, 01 Jan 1970 00:00:00 UTC";
+    const host = window.location.hostname;
+    if (newLang === "en") {
+      document.cookie = `googtrans=; expires=${expire}; path=/;`;
+      document.cookie = `googtrans=; expires=${expire}; domain=${host}; path=/;`;
+      return;
+    }
+    document.cookie = `googtrans=/en/${newLang}; path=/;`;
+    document.cookie = `googtrans=/en/${newLang}; domain=${host}; path=/;`;
+  };
+
+  const removeGoogleTranslateArtifacts = () => {
+    document.body.classList.remove("translated-ltr", "translated-rtl");
+    document.documentElement.classList.remove("translated-ltr", "translated-rtl");
+    document.querySelectorAll(".goog-te-banner-frame, iframe.skiptranslate").forEach((node) => {
+      node.remove();
+    });
+    document.querySelectorAll('font[style*="vertical-align: inherit"]').forEach((node) => {
+      const parent = node.parentNode;
+      if (!parent) return;
+      while (node.firstChild) {
+        parent.insertBefore(node.firstChild, node);
+      }
+      parent.removeChild(node);
+    });
+  };
+
   useEffect(() => {
-    const match = document.cookie.match(/googtrans=\/en\/([^;]+)/);
-    if (match) {
-      setLang(match[1]);
+    const saved = localStorage.getItem("preferred_lang");
+    if (saved) {
+      setLang(saved);
+      applyTranslateCookie(saved);
+      if (saved === "en") {
+        removeGoogleTranslateArtifacts();
+      }
     }
   }, []);
 
   const handleLanguageChange = (newLang: string) => {
+    setLang(newLang);
+    localStorage.setItem("preferred_lang", newLang);
+    applyTranslateCookie(newLang);
     if (newLang === "en") {
-      document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-      document.cookie =
-        "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; domain=" +
-        window.location.hostname +
-        "; path=/;";
-    } else {
-      document.cookie = `googtrans=/en/${newLang}; path=/`;
-      document.cookie = `googtrans=/en/${newLang}; domain=${window.location.hostname}; path=/`;
+      removeGoogleTranslateArtifacts();
     }
     window.location.reload();
   };
 
   useEffect(() => {
+    if (lang === "en") {
+      removeGoogleTranslateArtifacts();
+      return;
+    }
+
     if (document.getElementById("google-translate-script")) return;
 
     (window as any).googleTranslateElementInit = () => {
