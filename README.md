@@ -55,7 +55,7 @@ graph TD
 | **Backend (API)** | https://crimevistaapi-50043992661.development.catalystappsail.in |
 | **Interactive API Docs (Swagger)** | https://crimevistaapi-50043992661.development.catalystappsail.in/docs |
 
-> **🔬 Important Note for Evaluators:** CrimeVista AI runs **4 real-time ML models** (Risk Prediction via XGBoost, Hotspot Detection via DBSCAN, Network Analysis via NetworkX/Louvain, and Anomaly Detection via Isolation Forest) on the backend. On the first visit, the ML models are loaded into memory — this may take **15–20 seconds**. During this time, the UI will display animated skeleton loading placeholders. All subsequent page navigations and interactions will be **near-instant (~0.2s response times)**. This initialization is a one-time cost per session and demonstrates that the platform performs genuine real-time machine learning inference, not pre-computed static data.
+> **🔬 Important Note for Evaluators:** CrimeVista AI runs **4 real-time ML models** (Risk Prediction via XGBoost, Hotspot Detection via DBSCAN, Network Analysis via NetworkX/Louvain, and Anomaly Detection via Isolation Forest) on the backend. On the first visit, the ML models are loaded into memory — this may take **15–20 seconds**. During this time, the UI will display animated skeleton loading placeholders. All subsequent page navigations and interactions will be **near-instant (~5s response times)**. This initialization is a one-time cost per session and demonstrates that the platform performs genuine real-time machine learning inference, not pre-computed static data.
 
 ---
 
